@@ -1,4 +1,4 @@
-const APP_VERSION = "v0.4.1-rc4";
+const APP_VERSION = "v0.4.1-rc5";
 const STORAGE_KEY = "gptPlantWalks";
 const DRAFT_KEY = "gptPlantWalkDraft";
 const ACTIVE_WALK_KEY = "gptPlantWalkActiveWalkId";
@@ -47,6 +47,8 @@ photoInput.addEventListener("change", handleSelectedPhotos);
 if (appVersionText) {
   appVersionText.textContent = `GPT Plant Walk ${APP_VERSION}`;
 }
+
+updateSaveIssueButtonState();
 
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js");
@@ -123,7 +125,8 @@ function clearDraft() {
   selectedPhotos = [];
   isProcessingPhotos = false;
   photoConversionError = false;
-  selectedPhotoPreview.innerHTML = "";
+  updateSaveIssueButtonState();
+  renderSelectedPhotos();
   localStorage.removeItem(DRAFT_KEY);
 }
 
@@ -133,7 +136,12 @@ function clearIssueEntryForm() {
   selectedPhotos = [];
   isProcessingPhotos = false;
   photoConversionError = false;
-  selectedPhotoPreview.innerHTML = "";
+  updateSaveIssueButtonState();
+  renderSelectedPhotos();
+}
+
+function updateSaveIssueButtonState() {
+  saveIssueBtn.disabled = isProcessingPhotos;
 }
 
 function restoreInterruptedWalk() {
@@ -207,6 +215,7 @@ async function handleSelectedPhotos() {
     selectedPhotos = [];
     isProcessingPhotos = false;
     photoConversionError = false;
+    updateSaveIssueButtonState();
     renderSelectedPhotos();
     saveDraft();
     return;
@@ -215,26 +224,47 @@ async function handleSelectedPhotos() {
   selectedPhotos = [];
   isProcessingPhotos = true;
   photoConversionError = false;
+  updateSaveIssueButtonState();
   renderSelectedPhotos();
   saveDraft();
 
   try {
-    selectedPhotos = await convertPhotosToBase64(photoInput.files);
+    selectedPhotos = await convertPhotosToBase64(files, 10000);
+    isProcessingPhotos = false;
+    photoConversionError = false;
+    updateSaveIssueButtonState();
     renderSelectedPhotos();
     saveDraft();
   } catch (error) {
     console.error("Could not convert selected photos to base64.", error);
     selectedPhotos = [];
+    isProcessingPhotos = false;
     photoConversionError = true;
+    updateSaveIssueButtonState();
     renderSelectedPhotos();
     alert("Unable to process the selected photo(s). Please try another photo or try again.");
-  } finally {
-    isProcessingPhotos = false;
   }
 }
 
 function renderSelectedPhotos() {
   selectedPhotoPreview.innerHTML = "";
+
+  if (isProcessingPhotos) {
+    const status = document.createElement("p");
+    status.className = "muted";
+    status.textContent = "Processing photo(s)...";
+    selectedPhotoPreview.appendChild(status);
+  } else if (photoConversionError) {
+    const status = document.createElement("p");
+    status.className = "muted";
+    status.textContent = "Photo processing failed. Please try another photo.";
+    selectedPhotoPreview.appendChild(status);
+  } else if (selectedPhotos.length > 0) {
+    const status = document.createElement("p");
+    status.className = "muted";
+    status.textContent = "Photos ready. Save Issue enabled.";
+    selectedPhotoPreview.appendChild(status);
+  }
 
   selectedPhotos.forEach(photo => {
     const img = document.createElement("img");
@@ -244,19 +274,11 @@ function renderSelectedPhotos() {
   });
 }
 
-async function saveIssue() {
+function saveIssue() {
   const observation = issueText.value.trim();
 
   if (!activeWalk) {
     alert("Start a plant walk first.");
-    return;
-  }
-
-  if (photoInput.files && photoInput.files.length > 0 && isProcessingPhotos) {
-    await handleSelectedPhotos();
-  }
-
-  if (photoConversionError) {
     return;
   }
 
@@ -277,7 +299,7 @@ async function saveIssue() {
   renderIssues();
 }
 
-function convertPhotosToBase64(files) {
+function convertPhotosToBase64(files, timeoutMs = 10000) {
   const fileList = Array.from(files || []);
 
   if (fileList.length === 0) {
@@ -287,10 +309,23 @@ function convertPhotosToBase64(files) {
   return Promise.all(
     fileList.map(file => {
       return new Promise((resolve, reject) => {
+        const timeoutId = window.setTimeout(() => {
+          reject(new Error(`Photo processing timed out: ${file.name}`));
+        }, timeoutMs);
+
         const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = () => reject(new Error(`Could not read file: ${file.name}`));
-        reader.onabort = () => reject(new Error(`Photo read was cancelled: ${file.name}`));
+        reader.onload = () => {
+          window.clearTimeout(timeoutId);
+          resolve(reader.result);
+        };
+        reader.onerror = () => {
+          window.clearTimeout(timeoutId);
+          reject(new Error(`Could not read file: ${file.name}`));
+        };
+        reader.onabort = () => {
+          window.clearTimeout(timeoutId);
+          reject(new Error(`Photo read was cancelled: ${file.name}`));
+        };
         reader.readAsDataURL(file);
       });
     })
