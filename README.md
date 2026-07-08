@@ -1,54 +1,66 @@
 # GPT Plant Walk
 
-A Progressive Web App for maintenance plant walks.
+Progressive Web App for maintenance and reliability plant walks.
 
-## Version
+## Current Release
 
-v0.1.0
+**Version:** 0.4.1-rc1  
+**Release:** Sprint 4.1 RC1
 
-## MVP Features Included
+## Sprint 4.1 RC1 Release Notes
 
-- Start Plant Walk
-- Record Issue
-- Voice Dictation
-- Multiple Photos
-- Auto-save every issue
-- Previous Walks
-- Professional printable PDF report with embedded photos
-- ChatGPT-ready report
-- Installable on iPhone Home Screen
-- Offline capable
+### Added
 
-## How to Deploy to GitHub Pages
+- Centralized app version display in the header and footer.
+- Active walk recovery after closing or refreshing the browser.
+- Draft autosave while typing.
+- Selected photo autosave before the issue is saved.
+- Photo compression before local storage to improve reliability on mobile.
+- Online/offline status indicator.
+- User-facing save/status messages.
+- Previous Walks search.
+- Previous Walk thumbnails.
+- Improved printable report with embedded photos.
+- Professional report sections aligned to maintenance and reliability review.
 
-1. Upload all files in this folder to the root of your GitHub repository.
-2. Go to repository Settings.
-3. Open Pages.
-4. Set source to Deploy from branch.
-5. Select branch: main.
-6. Select folder: /root.
-7. Save.
-8. Open the GitHub Pages URL.
+### Improved
 
-## iPhone Install
+- Saved issues are now persisted immediately to the active walk record.
+- Finished walks are separated from the active walk state.
+- Reports include app version, generated time, issue count, and photo count.
+- Service worker cache name was updated to force deployment of the new build.
 
-1. Open the GitHub Pages URL in Safari.
-2. Tap Share.
-3. Tap Add to Home Screen.
-4. Launch GPT Plant Walk from the Home Screen.
+### Files Modified
 
-## Notes
+- `index.html`
+- `app.js`
+- `styles.css`
+- `manifest.webmanifest`
+- `sw.js`
+- `README.md`
 
-Voice dictation depends on browser support. Photo capture and offline storage work locally in the browser.
+## Test Checklist
 
-## Sprint 1
+1. Open the app and confirm it displays `v0.4.1-rc1`.
+2. Start a plant walk.
+3. Type an observation and confirm draft save status appears.
+4. Attach one or more photos and confirm previews appear.
+5. Close and reopen the browser/app before saving the issue.
+6. Confirm the active walk, observation draft, and selected photos are restored.
+7. Save the issue.
+8. Add a second issue with photos.
+9. Finish the walk and generate the report.
+10. Confirm photos appear in the professional report.
+11. Use Save / Print PDF and confirm photos print under the correct issue.
+12. Open Previous Walks and confirm the walk appears with thumbnails.
+13. Search Previous Walks by observation text.
+14. Turn on airplane mode and confirm the app shell still opens after it has been loaded once.
 
-Created the first working PWA foundation using plain HTML, CSS, and JavaScript.
+## Future TODOs
 
-## Sprint 2
-
-Added voice dictation and professional printable PDF reporting with embedded photos.
-
-## Sprint 3 / v0.1.0
-
-Created a complete deployable project package with app icons, polished UI, offline cache, and GitHub Pages-ready structure.
+- IronRock branding and logo.
+- Equipment/location field.
+- Severity field.
+- Work order export.
+- QR equipment scanning.
+- CMMS integration.
