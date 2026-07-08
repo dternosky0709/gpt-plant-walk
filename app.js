@@ -1,20 +1,13 @@
-const APP_VERSION = "0.4.1-rc1";
-const APP_RELEASE_NAME = "Sprint 4.1 RC1";
+const APP_VERSION = "v0.4.1-rc2";
 const STORAGE_KEY = "gptPlantWalks";
-const ACTIVE_WALK_KEY = "gptPlantWalkActiveWalk";
 const DRAFT_KEY = "gptPlantWalkDraft";
-const SELECTED_PHOTOS_KEY = "gptPlantWalkSelectedPhotos";
-const MAX_PHOTO_WIDTH = 1400;
-const PHOTO_QUALITY = 0.78;
-const AUTOSAVE_DELAY_MS = 400;
+const ACTIVE_WALK_KEY = "gptPlantWalkActiveWalkId";
 
-let walks = safeJsonRead(STORAGE_KEY, []);
-let activeWalk = safeJsonRead(ACTIVE_WALK_KEY, null);
+let walks = loadWalks();
+let activeWalk = null;
 let recognition = null;
 let isListening = false;
-let selectedPhotos = safeJsonRead(SELECTED_PHOTOS_KEY, []);
-let draftTimer = null;
-let statusTimer = null;
+let selectedPhotos = [];
 
 const startWalkBtn = document.getElementById("startWalkBtn");
 const viewWalksBtn = document.getElementById("viewWalksBtn");
@@ -36,239 +29,185 @@ const copyReportBtn = document.getElementById("copyReportBtn");
 const printPdfBtn = document.getElementById("printPdfBtn");
 const voiceBtn = document.getElementById("voiceBtn");
 const professionalReport = document.getElementById("professionalReport");
-const statusMessage = document.getElementById("statusMessage");
-const onlineStatus = document.getElementById("onlineStatus");
-const versionBadge = document.getElementById("versionBadge");
-const footerVersion = document.getElementById("footerVersion");
-const draftStatus = document.getElementById("draftStatus");
-const photoStatus = document.getElementById("photoStatus");
-const walkSearch = document.getElementById("walkSearch");
+const appVersionText = document.getElementById("appVersionText");
 
-initializeApp();
+startWalkBtn.addEventListener("click", startWalk);
+viewWalksBtn.addEventListener("click", renderPreviousWalks);
+saveIssueBtn.addEventListener("click", saveIssue);
+finishWalkBtn.addEventListener("click", finishWalk);
+copyReportBtn.addEventListener("click", copyReport);
+printPdfBtn.addEventListener("click", () => window.print());
+voiceBtn.addEventListener("click", toggleVoiceDictation);
+clearDraftBtn.addEventListener("click", clearDraft);
+issueText.addEventListener("input", saveDraft);
+photoInput.addEventListener("change", handleSelectedPhotos);
 
-function initializeApp() {
-  bindEvents();
-  registerServiceWorker();
-  updateVersionDisplay();
-  updateOnlineStatus();
-  restoreDraft();
-  renderSelectedPhotos();
-  renderActiveWalkIfPresent();
-
-  window.addEventListener("online", updateOnlineStatus);
-  window.addEventListener("offline", updateOnlineStatus);
-  window.addEventListener("beforeunload", persistCurrentState);
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden") persistCurrentState();
-  });
+if (appVersionText) {
+  appVersionText.textContent = `GPT Plant Walk ${APP_VERSION}`;
 }
 
-function bindEvents() {
-  startWalkBtn.addEventListener("click", startWalk);
-  viewWalksBtn.addEventListener("click", renderPreviousWalks);
-  saveIssueBtn.addEventListener("click", saveIssue);
-  finishWalkBtn.addEventListener("click", finishWalk);
-  copyReportBtn.addEventListener("click", copyReport);
-  printPdfBtn.addEventListener("click", () => window.print());
-  voiceBtn.addEventListener("click", toggleVoiceDictation);
-  clearDraftBtn.addEventListener("click", clearDraft);
-  issueText.addEventListener("input", queueDraftSave);
-  photoInput.addEventListener("change", handleSelectedPhotos);
-  walkSearch.addEventListener("input", renderWalkList);
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js");
 }
 
-function updateVersionDisplay() {
-  versionBadge.textContent = `v${APP_VERSION}`;
-  footerVersion.textContent = `GPT Plant Walk v${APP_VERSION} • ${APP_RELEASE_NAME}`;
-}
+restoreInterruptedWalk();
 
-function updateOnlineStatus() {
-  onlineStatus.textContent = navigator.onLine ? "Online" : "Offline";
-  onlineStatus.classList.toggle("offline", !navigator.onLine);
-}
-
-function renderActiveWalkIfPresent() {
-  if (!activeWalk) return;
-
-  activeWalkSection.classList.remove("hidden");
-  previousWalksSection.classList.add("hidden");
-  reportSection.classList.add("hidden");
-  walkStartedText.textContent = `Started: ${formatDateTime(activeWalk.startedAt)}`;
-  renderIssues();
-  showStatus("Active walk restored.");
-}
-
-function startWalk() {
-  if (activeWalk) {
-    showStatus("A plant walk is already active.");
-    activeWalkSection.classList.remove("hidden");
-    previousWalksSection.classList.add("hidden");
-    reportSection.classList.add("hidden");
-    return;
+function loadWalks() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    return Array.isArray(stored) ? stored : [];
+  } catch (error) {
+    console.error("Could not load saved walks.", error);
+    return [];
   }
-
-  activeWalk = {
-    id: crypto.randomUUID(),
-    appVersion: APP_VERSION,
-    startedAt: new Date().toISOString(),
-    finishedAt: null,
-    issues: []
-  };
-
-  persistActiveWalk();
-
-  activeWalkSection.classList.remove("hidden");
-  previousWalksSection.classList.add("hidden");
-  reportSection.classList.add("hidden");
-  walkStartedText.textContent = `Started: ${formatDateTime(activeWalk.startedAt)}`;
-  renderIssues();
-  showStatus("Plant walk started.");
 }
 
 function persistWalks() {
-  safeJsonWrite(STORAGE_KEY, walks);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(walks));
 }
 
-function persistActiveWalk() {
-  safeJsonWrite(ACTIVE_WALK_KEY, activeWalk);
-}
-
-function persistCurrentState() {
-  if (activeWalk) persistActiveWalk();
-  saveDraftNow();
-  saveSelectedPhotos();
-}
-
-function queueDraftSave() {
-  if (draftTimer) clearTimeout(draftTimer);
-  draftStatus.textContent = "Saving draft...";
-  draftTimer = setTimeout(saveDraftNow, AUTOSAVE_DELAY_MS);
-}
-
-function saveDraftNow() {
-  const draft = issueText.value;
-  localStorage.setItem(DRAFT_KEY, draft);
-  draftStatus.textContent = draft.trim() ? "Draft saved." : "Draft autosaves while you type.";
-}
-
-function restoreDraft() {
-  const draft = localStorage.getItem(DRAFT_KEY);
-  if (draft) {
-    issueText.value = draft;
-    draftStatus.textContent = "Draft restored.";
+function persistActiveWalkId() {
+  if (activeWalk) {
+    localStorage.setItem(ACTIVE_WALK_KEY, activeWalk.id);
+  } else {
+    localStorage.removeItem(ACTIVE_WALK_KEY);
   }
 }
 
-function saveSelectedPhotos() {
-  safeJsonWrite(SELECTED_PHOTOS_KEY, selectedPhotos);
+function saveDraft() {
+  if (!activeWalk) return;
+
+  const draft = {
+    walkId: activeWalk.id,
+    observation: issueText.value,
+    photos: selectedPhotos,
+    updatedAt: new Date().toISOString()
+  };
+
+  localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+}
+
+function restoreDraftForActiveWalk() {
+  if (!activeWalk) return;
+
+  const draft = readDraft();
+  if (!draft || draft.walkId !== activeWalk.id) return;
+
+  issueText.value = draft.observation || "";
+  selectedPhotos = Array.isArray(draft.photos) ? draft.photos : [];
+  renderSelectedPhotos();
+}
+
+function readDraft() {
+  const raw = localStorage.getItem(DRAFT_KEY);
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw);
+
+    if (parsed && typeof parsed === "object" && "walkId" in parsed) {
+      return parsed;
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 function clearDraft() {
-  const hasDraft = issueText.value.trim() || selectedPhotos.length > 0;
-  if (hasDraft && !confirm("Clear the current unsaved observation and selected photos?")) return;
-
   issueText.value = "";
   photoInput.value = "";
   selectedPhotos = [];
   selectedPhotoPreview.innerHTML = "";
   localStorage.removeItem(DRAFT_KEY);
-  localStorage.removeItem(SELECTED_PHOTOS_KEY);
-  draftStatus.textContent = "Draft cleared.";
-  photoStatus.textContent = "No photos selected.";
 }
 
-async function handleSelectedPhotos() {
-  const files = Array.from(photoInput.files || []);
+function clearIssueEntryForm() {
+  issueText.value = "";
+  photoInput.value = "";
+  selectedPhotos = [];
+  selectedPhotoPreview.innerHTML = "";
+}
 
-  if (files.length === 0) {
-    selectedPhotos = [];
-    saveSelectedPhotos();
-    renderSelectedPhotos();
+function restoreInterruptedWalk() {
+  const activeWalkId = localStorage.getItem(ACTIVE_WALK_KEY);
+  if (!activeWalkId) {
+    localStorage.removeItem(DRAFT_KEY);
     return;
   }
 
-  saveIssueBtn.disabled = true;
-  photoStatus.textContent = `Processing ${files.length} photo(s)...`;
+  activeWalk = walks.find(walk => walk.id === activeWalkId && walk.status !== "completed") || null;
 
-  try {
-    selectedPhotos = [];
-    for (const file of files) {
-      selectedPhotos.push(await compressPhoto(file));
-      renderSelectedPhotos();
-    }
-    saveSelectedPhotos();
-    showStatus(`${selectedPhotos.length} photo(s) ready.`);
-  } catch (error) {
-    console.error(error);
-    showStatus("Photo processing failed. Try taking the photo again.", true);
-  } finally {
-    saveIssueBtn.disabled = false;
+  if (!activeWalk) {
+    localStorage.removeItem(ACTIVE_WALK_KEY);
+    localStorage.removeItem(DRAFT_KEY);
+    return;
   }
+
+  activeWalkSection.classList.remove("hidden");
+  previousWalksSection.classList.add("hidden");
+  reportSection.classList.add("hidden");
+
+  walkStartedText.textContent = `Started: ${activeWalk.startedAt}`;
+  restoreDraftForActiveWalk();
+  renderIssues();
 }
 
-function compressPhoto(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
+function startWalk() {
+  if (activeWalk && activeWalk.status !== "completed") {
+    const continueWalk = confirm("A plant walk is already active. Continue that walk instead of starting a new one?");
+    if (continueWalk) {
+      activeWalkSection.classList.remove("hidden");
+      previousWalksSection.classList.add("hidden");
+      reportSection.classList.add("hidden");
+      walkStartedText.textContent = `Started: ${activeWalk.startedAt}`;
+      renderIssues();
+      return;
+    }
 
-    reader.onerror = () => reject(new Error("File could not be read."));
-    reader.onload = () => {
-      const image = new Image();
+    activeWalk.status = "completed";
+    activeWalk.endedAt = new Date().toLocaleString();
+  }
 
-      image.onerror = () => reject(new Error("Image could not be loaded."));
-      image.onload = () => {
-        const scale = Math.min(1, MAX_PHOTO_WIDTH / image.width);
-        const width = Math.max(1, Math.round(image.width * scale));
-        const height = Math.max(1, Math.round(image.height * scale));
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
+  clearDraft();
+  clearIssueEntryForm();
 
-        const context = canvas.getContext("2d");
-        context.drawImage(image, 0, 0, width, height);
+  activeWalk = {
+    id: crypto.randomUUID(),
+    version: APP_VERSION,
+    status: "active",
+    startedAt: new Date().toLocaleString(),
+    endedAt: null,
+    issues: []
+  };
 
-        resolve({
-          id: crypto.randomUUID(),
-          name: file.name || "plant-walk-photo.jpg",
-          type: "image/jpeg",
-          size: file.size,
-          capturedAt: new Date().toISOString(),
-          dataUrl: canvas.toDataURL("image/jpeg", PHOTO_QUALITY)
-        });
-      };
+  walks.unshift(activeWalk);
+  persistWalks();
+  persistActiveWalkId();
 
-      image.src = reader.result;
-    };
+  activeWalkSection.classList.remove("hidden");
+  previousWalksSection.classList.add("hidden");
+  reportSection.classList.add("hidden");
 
-    reader.readAsDataURL(file);
-  });
+  walkStartedText.textContent = `Started: ${activeWalk.startedAt}`;
+  renderIssues();
+}
+
+async function handleSelectedPhotos() {
+  selectedPhotos = await convertPhotosToBase64(photoInput.files);
+  renderSelectedPhotos();
+  saveDraft();
 }
 
 function renderSelectedPhotos() {
   selectedPhotoPreview.innerHTML = "";
 
-  if (!selectedPhotos.length) {
-    photoStatus.textContent = "No photos selected.";
-    return;
-  }
-
-  photoStatus.textContent = `${selectedPhotos.length} photo(s) selected and autosaved with this draft.`;
-
-  selectedPhotos.forEach((photo, index) => {
-    const wrapper = document.createElement("div");
-    wrapper.className = "photo-tile";
-    wrapper.innerHTML = `
-      <img src="${photo.dataUrl}" class="photo-preview" alt="Selected photo ${index + 1}" />
-      <button type="button" class="remove-photo" data-photo-id="${photo.id}">Remove</button>
-    `;
-    selectedPhotoPreview.appendChild(wrapper);
-  });
-
-  selectedPhotoPreview.querySelectorAll(".remove-photo").forEach(button => {
-    button.addEventListener("click", () => {
-      selectedPhotos = selectedPhotos.filter(photo => photo.id !== button.dataset.photoId);
-      saveSelectedPhotos();
-      renderSelectedPhotos();
-    });
+  selectedPhotos.forEach(photo => {
+    const img = document.createElement("img");
+    img.src = photo;
+    img.className = "photo-preview";
+    selectedPhotoPreview.appendChild(img);
   });
 }
 
@@ -281,33 +220,32 @@ async function saveIssue() {
   }
 
   if (!observation && selectedPhotos.length === 0) {
-    alert("Enter an observation or attach at least one photo before saving.");
+    alert("Enter an observation or attach a photo before saving.");
     return;
   }
 
-  const issue = {
+  activeWalk.issues.push({
     id: crypto.randomUUID(),
-    time: new Date().toISOString(),
-    observation: observation || "Photo-only issue. Add details during report review.",
-    photos: selectedPhotos.map(photo => ({ ...photo }))
-  };
+    time: new Date().toLocaleTimeString(),
+    observation,
+    photos: [...selectedPhotos]
+  });
 
-  activeWalk.issues.push(issue);
-  persistActiveWalk();
-  clearDraftAfterSave();
+  persistWalks();
+  clearDraft();
   renderIssues();
-  showStatus(`Issue ${activeWalk.issues.length} saved.`);
 }
 
-function clearDraftAfterSave() {
-  issueText.value = "";
-  photoInput.value = "";
-  selectedPhotos = [];
-  selectedPhotoPreview.innerHTML = "";
-  localStorage.removeItem(DRAFT_KEY);
-  localStorage.removeItem(SELECTED_PHOTOS_KEY);
-  draftStatus.textContent = "Draft autosaves while you type.";
-  photoStatus.textContent = "No photos selected.";
+function convertPhotosToBase64(files) {
+  return Promise.all(
+    Array.from(files).map(file => {
+      return new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.readAsDataURL(file);
+      });
+    })
+  );
 }
 
 function renderIssues() {
@@ -325,18 +263,17 @@ function renderIssues() {
     div.className = "issue";
     div.innerHTML = `
       <strong>Issue ${index + 1}</strong>
-      <p><strong>Time:</strong> ${escapeHtml(formatTime(issue.time))}</p>
-      <p>${escapeHtml(issue.observation)}</p>
+      <p><strong>Time:</strong> ${escapeHtml(issue.time)}</p>
+      <p>${escapeHtml(issue.observation || "Photo-only issue")}</p>
       <p><strong>Photos:</strong> ${issue.photos.length}</p>
       <div class="photo-grid"></div>
     `;
 
     const grid = div.querySelector(".photo-grid");
-    issue.photos.forEach((photo, photoIndex) => {
+    issue.photos.forEach(photo => {
       const img = document.createElement("img");
-      img.src = getPhotoSource(photo);
+      img.src = photo;
       img.className = "photo-preview";
-      img.alt = `Issue ${index + 1} photo ${photoIndex + 1}`;
       grid.appendChild(img);
     });
 
@@ -348,40 +285,21 @@ function renderPreviousWalks() {
   previousWalksSection.classList.remove("hidden");
   activeWalkSection.classList.add("hidden");
   reportSection.classList.add("hidden");
-  renderWalkList();
-}
-
-function renderWalkList() {
   walkList.innerHTML = "";
-  const searchText = walkSearch.value.trim().toLowerCase();
-  const finishedWalks = walks
-    .filter(walk => walk && walk.finishedAt)
-    .sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
 
-  const filteredWalks = finishedWalks.filter(walk => {
-    if (!searchText) return true;
-    return JSON.stringify(walk).toLowerCase().includes(searchText);
-  });
-
-  if (filteredWalks.length === 0) {
-    walkList.innerHTML = '<p class="muted">No previous walks found.</p>';
+  if (walks.length === 0) {
+    walkList.innerHTML = '<p class="muted">No previous walks yet.</p>';
     return;
   }
 
-  filteredWalks.forEach(walk => {
-    const issueCount = walk.issues.length;
-    const photoCount = walk.issues.reduce((total, issue) => total + issue.photos.length, 0);
-    const firstPhotos = walk.issues.flatMap(issue => issue.photos).slice(0, 4);
+  walks.forEach(walk => {
     const div = document.createElement("div");
     div.className = "walk";
     div.innerHTML = `
       <strong>Plant Walk</strong>
-      <p><strong>Started:</strong> ${escapeHtml(formatDateTime(walk.startedAt))}</p>
-      <p><strong>Total Issues:</strong> ${issueCount}</p>
-      <p><strong>Photos:</strong> ${photoCount}</p>
-      <div class="thumbnail-row">
-        ${firstPhotos.map((photo, index) => `<img src="${getPhotoSource(photo)}" alt="Walk thumbnail ${index + 1}" />`).join("")}
-      </div>
+      <p><strong>Started:</strong> ${escapeHtml(walk.startedAt)}</p>
+      <p><strong>Status:</strong> ${escapeHtml(walk.status || "completed")}</p>
+      <p><strong>Total Issues:</strong> ${walk.issues.length}</p>
       <button data-id="${walk.id}">Generate Report</button>
     `;
 
@@ -393,27 +311,19 @@ function renderWalkList() {
 function finishWalk() {
   if (!activeWalk) return;
 
-  if (activeWalk.issues.length === 0) {
-    const ok = confirm("This walk has no saved issues. Finish it anyway?");
-    if (!ok) return;
-  }
-
-  activeWalk.finishedAt = new Date().toISOString();
-  walks = walks.filter(walk => walk.id !== activeWalk.id);
-  walks.unshift(activeWalk);
+  activeWalk.status = "completed";
+  activeWalk.endedAt = new Date().toLocaleString();
   persistWalks();
-  persistActiveWalk();
-
-  const finishedWalkId = activeWalk.id;
+  persistActiveWalkId();
+  clearDraft();
+  generateReport(activeWalk.id);
   activeWalk = null;
-  localStorage.removeItem(ACTIVE_WALK_KEY);
+  persistActiveWalkId();
   activeWalkSection.classList.add("hidden");
-  generateReport(finishedWalkId);
-  showStatus("Plant walk finished and report generated.");
 }
 
 function generateReport(walkId) {
-  const walk = walks.find(item => item.id === walkId) || (activeWalk && activeWalk.id === walkId ? activeWalk : null);
+  const walk = walks.find(item => item.id === walkId);
   if (!walk) return;
 
   reportOutput.value = buildChatGptReport(walk);
@@ -435,10 +345,8 @@ Create:
 7. Prioritized Action List
 8. Final Professional Plant Walk Report
 
-Plant Walk Started: ${formatDateTime(walk.startedAt)}
-Plant Walk Finished: ${walk.finishedAt ? formatDateTime(walk.finishedAt) : "In Progress"}
+Plant Walk Started: ${walk.startedAt}
 Total Issues: ${walk.issues.length}
-App Version: ${APP_VERSION}
 
 Raw observations:
 
@@ -446,10 +354,10 @@ Raw observations:
 
   walk.issues.forEach((issue, index) => {
     report += `Issue ${index + 1}
-Time: ${formatTime(issue.time)}
+Time: ${issue.time}
 Observation:
-${issue.observation}
-Photos: ${issue.photos.length > 0 ? `${issue.photos.length} - embedded in PDF report` : "No"}
+${issue.observation || "Photo-only issue"}
+Photos: ${issue.photos.length > 0 ? "Yes - embedded in PDF report" : "No"}
 --------------------------------
 
 `;
@@ -459,90 +367,37 @@ Photos: ${issue.photos.length > 0 ? `${issue.photos.length} - embedded in PDF re
 }
 
 function buildProfessionalReportHtml(walk) {
-  const generatedAt = new Date().toISOString();
-  const issueCount = walk.issues.length;
-  const photoCount = walk.issues.reduce((total, issue) => total + issue.photos.length, 0);
-
   let html = `
     <div class="report-header">
-      <p class="report-kicker">Maintenance & Reliability</p>
       <h1>Plant Walk Report</h1>
-      <p><strong>Started:</strong> ${escapeHtml(formatDateTime(walk.startedAt))}</p>
-      <p><strong>Finished:</strong> ${escapeHtml(walk.finishedAt ? formatDateTime(walk.finishedAt) : "In Progress")}</p>
-      <p><strong>Generated:</strong> ${escapeHtml(formatDateTime(generatedAt))}</p>
-      <p><strong>Total Issues:</strong> ${issueCount}</p>
-      <p><strong>Total Photos:</strong> ${photoCount}</p>
-      <p><strong>App Version:</strong> ${escapeHtml(APP_VERSION)}</p>
+      <p><strong>Started:</strong> ${escapeHtml(walk.startedAt)}</p>
+      <p><strong>Ended:</strong> ${escapeHtml(walk.endedAt || "Not completed")}</p>
+      <p><strong>Total Issues:</strong> ${walk.issues.length}</p>
+      <p><strong>App Version:</strong> ${escapeHtml(walk.version || APP_VERSION)}</p>
     </div>
 
     <section class="report-section">
-      <h2>1. Executive Summary</h2>
-      <p>This plant walk documented ${issueCount} maintenance and reliability observation${issueCount === 1 ? "" : "s"}. The findings should be reviewed by maintenance leadership, converted into work orders where appropriate, and prioritized based on safety, uptime risk, equipment protection, and repeat-failure potential.</p>
+      <h2>Executive Summary</h2>
+      <p>This report documents ${walk.issues.length} maintenance and reliability observation${walk.issues.length === 1 ? "" : "s"} captured during the plant walk.</p>
     </section>
 
     <section class="report-section">
-      <h2>2. Safety Concerns</h2>
-      <p>Review each observation for immediate safety impact, including exposed wiring, damaged guarding, unstable components, pinch points, trip hazards, abnormal heat, stored energy hazards, or unsafe robot/conveyor operation.</p>
-    </section>
-
-    <section class="report-section">
-      <h2>3. Immediate Repairs</h2>
-      <p>Items affecting personnel safety, production uptime, critical assets, electrical integrity, or mechanical failure risk should be inspected and corrected first.</p>
-    </section>
-
-    <section class="report-section">
-      <h2>4. Suggested Work Orders</h2>
-      <ol>
-  `;
-
-  walk.issues.forEach((issue, index) => {
-    html += `<li><strong>WO-${String(index + 1).padStart(3, "0")}:</strong> Inspect and correct Issue ${index + 1}. Observation: ${escapeHtml(issue.observation)}</li>`;
-  });
-
-  html += `
-      </ol>
-    </section>
-
-    <section class="report-section">
-      <h2>5. Reliability Concerns</h2>
-      <p>Evaluate observations for developing failure modes such as bearing wear, loose belting, poor cable management, sensor damage, intermittent controls faults, robot repeatability problems, and conditions that may lead to unplanned downtime.</p>
-    </section>
-
-    <section class="report-section">
-      <h2>6. Engineering Improvements</h2>
-      <p>Consider design improvements, guarding updates, cable routing, sensor protection, PM checklist updates, spare parts additions, and condition monitoring where repeat or high-risk issues are identified.</p>
-    </section>
-
-    <section class="report-section">
-      <h2>7. Prioritized Action List</h2>
-      <table class="priority-table">
-        <thead><tr><th>Priority</th><th>Action</th><th>Owner</th></tr></thead>
-        <tbody>
-          <tr><td>High</td><td>Review safety-impacting issues and secure unsafe conditions.</td><td>Maintenance / Engineering</td></tr>
-          <tr><td>High</td><td>Create corrective work orders for equipment conditions observed during this walk.</td><td>Maintenance Planner</td></tr>
-          <tr><td>Medium</td><td>Evaluate reliability impact and identify repeat-failure patterns.</td><td>Reliability / Engineering</td></tr>
-          <tr><td>Low</td><td>Update PMs, inspection routes, and documentation as needed.</td><td>Maintenance Leadership</td></tr>
-        </tbody>
-      </table>
-    </section>
-
-    <section class="report-section">
-      <h2>8. Recorded Issues</h2>
+      <h2>Recorded Issues</h2>
   `;
 
   walk.issues.forEach((issue, index) => {
     html += `
       <div class="report-issue">
         <h3>Issue ${index + 1}</h3>
-        <p><strong>Time:</strong> ${escapeHtml(formatTime(issue.time))}</p>
+        <p><strong>Time:</strong> ${escapeHtml(issue.time)}</p>
         <p><strong>Observation:</strong></p>
-        <p>${escapeHtml(issue.observation)}</p>
+        <p>${escapeHtml(issue.observation || "Photo-only issue")}</p>
         <p><strong>Photos:</strong> ${issue.photos.length}</p>
         <div class="report-photo-grid">
     `;
 
-    issue.photos.forEach((photo, photoIndex) => {
-      html += `<figure><img class="report-photo" src="${getPhotoSource(photo)}" alt="Issue ${index + 1} photo ${photoIndex + 1}" /><figcaption>Issue ${index + 1} Photo ${photoIndex + 1}</figcaption></figure>`;
+    issue.photos.forEach(photo => {
+      html += `<img class="report-photo" src="${photo}" alt="Issue photo" />`;
     });
 
     html += `
@@ -555,26 +410,35 @@ function buildProfessionalReportHtml(walk) {
     </section>
 
     <section class="report-section">
-      <h2>Final Professional Plant Walk Report</h2>
-      <p>The observations captured in this walk should be reviewed and assigned according to safety risk and production impact. Maintenance should verify each issue in the field, document corrective action, and update equipment history where applicable.</p>
+      <h2>Maintenance Review Areas</h2>
+      <p><strong>Safety Concerns:</strong> Review observations for damaged guarding, exposed electrical conditions, trip hazards, and unsafe operating conditions.</p>
+      <p><strong>Immediate Repairs:</strong> Prioritize items affecting safety, production uptime, equipment protection, or compliance.</p>
+      <p><strong>Suggested Work Orders:</strong> Convert validated findings into corrective work orders with equipment, priority, assigned craft, and target completion date.</p>
+      <p><strong>Reliability Concerns:</strong> Review repeated failures, noisy bearings, damaged sensors, loose wiring, worn conveyors, and poor accessibility.</p>
+      <p><strong>Engineering Improvements:</strong> Consider guarding, cable management, sensor protection, PM updates, and design changes to prevent recurrence.</p>
     </section>
   `;
 
   return html;
 }
 
-async function copyReport() {
-  try {
-    await navigator.clipboard.writeText(reportOutput.value);
-    showStatus("Report copied.");
-  } catch {
-    reportOutput.select();
-    document.execCommand("copy");
-    showStatus("Report copied.");
-  }
+function copyReport() {
+  reportOutput.select();
+  document.execCommand("copy");
+  alert("Report copied.");
+}
+
+function focusObservationField() {
+  issueText.focus({ preventScroll: false });
+  issueText.scrollIntoView({ behavior: "smooth", block: "center" });
+
+  const length = issueText.value.length;
+  issueText.setSelectionRange(length, length);
 }
 
 function toggleVoiceDictation() {
+  focusObservationField();
+
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
   if (!SpeechRecognition) {
@@ -594,12 +458,8 @@ function toggleVoiceDictation() {
         transcript += event.results[i][0].transcript;
       }
       issueText.value = `${issueText.value} ${transcript}`.trim();
-      saveDraftNow();
-    };
-
-    recognition.onerror = event => {
-      console.warn("Speech recognition error:", event.error);
-      showStatus("Voice dictation stopped. You can use the keyboard microphone.", true);
+      focusObservationField();
+      saveDraft();
     };
 
     recognition.onend = () => {
@@ -616,69 +476,6 @@ function toggleVoiceDictation() {
     recognition.start();
     isListening = true;
     voiceBtn.textContent = "Stop Voice Dictation";
-  }
-}
-
-function showStatus(message, isError = false) {
-  statusMessage.textContent = message;
-  statusMessage.classList.remove("hidden", "error");
-  statusMessage.classList.toggle("error", isError);
-
-  if (statusTimer) clearTimeout(statusTimer);
-  statusTimer = setTimeout(() => {
-    statusMessage.classList.add("hidden");
-  }, 3500);
-}
-
-function getPhotoSource(photo) {
-  if (typeof photo === "string") return photo;
-  return photo.dataUrl;
-}
-
-function formatDateTime(value) {
-  if (!value) return "-";
-  return new Date(value).toLocaleString([], {
-    year: "numeric",
-    month: "numeric",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit"
-  });
-}
-
-function formatTime(value) {
-  if (!value) return "-";
-  return new Date(value).toLocaleTimeString([], {
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit"
-  });
-}
-
-function safeJsonRead(key, fallback) {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
-  } catch (error) {
-    console.warn(`Could not read ${key}:`, error);
-    return fallback;
-  }
-}
-
-function safeJsonWrite(key, value) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch (error) {
-    console.error(`Could not save ${key}:`, error);
-    showStatus("Storage failed. Try removing some old walks or photos.", true);
-  }
-}
-
-function registerServiceWorker() {
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js").catch(error => {
-      console.warn("Service worker registration failed:", error);
-    });
   }
 }
 

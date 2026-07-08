@@ -18,15 +18,9 @@
       <h1>GPT Plant Walk</h1>
       <p>Maintenance observations, photos, reports, and ChatGPT-ready summaries.</p>
     </div>
-    <div class="header-status">
-      <span id="onlineStatus" class="status-pill">Checking</span>
-      <span id="versionBadge" class="status-pill">Version</span>
-    </div>
   </header>
 
   <main>
-    <section id="statusMessage" class="status-message hidden no-print" role="status" aria-live="polite"></section>
-
     <section class="card no-print hero-card">
       <h2>Plant Walk Dashboard</h2>
       <p>Start a new walk, capture issues, attach photos, and generate a professional report.</p>
@@ -45,7 +39,6 @@
 
       <label for="issueText">Observation</label>
       <textarea id="issueText" placeholder="Example: Kiln car track 3 limit switch damaged"></textarea>
-      <p id="draftStatus" class="muted small-text">Draft autosaves while you type.</p>
 
       <div class="button-grid">
         <button id="voiceBtn" class="secondary">Start Voice Dictation</button>
@@ -54,7 +47,6 @@
 
       <label for="photoInput">Photos</label>
       <input id="photoInput" type="file" accept="image/*" capture="environment" multiple />
-      <p id="photoStatus" class="muted small-text">No photos selected.</p>
       <div id="selectedPhotoPreview" class="photo-grid"></div>
 
       <button id="saveIssueBtn">Save Issue</button>
@@ -65,13 +57,7 @@
     </section>
 
     <section id="previousWalksSection" class="card hidden no-print">
-      <div class="section-title-row">
-        <div>
-          <h2>Previous Walks</h2>
-          <p class="muted">Search, review, and regenerate saved reports.</p>
-        </div>
-      </div>
-      <input id="walkSearch" class="search-input" type="search" placeholder="Search walks or observations" />
+      <h2>Previous Walks</h2>
       <div id="walkList"></div>
     </section>
 
@@ -89,7 +75,7 @@
   </main>
 
   <footer class="no-print">
-    <p id="footerVersion">GPT Plant Walk</p>
+    <p id="appVersionText">GPT Plant Walk</p>
   </footer>
 
   <script src="app.js"></script>
