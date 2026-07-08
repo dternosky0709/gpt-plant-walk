@@ -1,4 +1,4 @@
-const APP_VERSION = "v0.4.1-rc2";
+const APP_VERSION = "v0.4.1-rc4";
 const STORAGE_KEY = "gptPlantWalks";
 const DRAFT_KEY = "gptPlantWalkDraft";
 const ACTIVE_WALK_KEY = "gptPlantWalkActiveWalkId";
@@ -8,6 +8,8 @@ let activeWalk = null;
 let recognition = null;
 let isListening = false;
 let selectedPhotos = [];
+let isProcessingPhotos = false;
+let photoConversionError = false;
 
 const startWalkBtn = document.getElementById("startWalkBtn");
 const viewWalksBtn = document.getElementById("viewWalksBtn");
@@ -119,6 +121,8 @@ function clearDraft() {
   issueText.value = "";
   photoInput.value = "";
   selectedPhotos = [];
+  isProcessingPhotos = false;
+  photoConversionError = false;
   selectedPhotoPreview.innerHTML = "";
   localStorage.removeItem(DRAFT_KEY);
 }
@@ -127,6 +131,8 @@ function clearIssueEntryForm() {
   issueText.value = "";
   photoInput.value = "";
   selectedPhotos = [];
+  isProcessingPhotos = false;
+  photoConversionError = false;
   selectedPhotoPreview.innerHTML = "";
 }
 
@@ -195,9 +201,36 @@ function startWalk() {
 }
 
 async function handleSelectedPhotos() {
-  selectedPhotos = await convertPhotosToBase64(photoInput.files);
+  const files = Array.from(photoInput.files || []);
+
+  if (files.length === 0) {
+    selectedPhotos = [];
+    isProcessingPhotos = false;
+    photoConversionError = false;
+    renderSelectedPhotos();
+    saveDraft();
+    return;
+  }
+
+  selectedPhotos = [];
+  isProcessingPhotos = true;
+  photoConversionError = false;
   renderSelectedPhotos();
   saveDraft();
+
+  try {
+    selectedPhotos = await convertPhotosToBase64(photoInput.files);
+    renderSelectedPhotos();
+    saveDraft();
+  } catch (error) {
+    console.error("Could not convert selected photos to base64.", error);
+    selectedPhotos = [];
+    photoConversionError = true;
+    renderSelectedPhotos();
+    alert("Unable to process the selected photo(s). Please try another photo or try again.");
+  } finally {
+    isProcessingPhotos = false;
+  }
 }
 
 function renderSelectedPhotos() {
@@ -219,6 +252,14 @@ async function saveIssue() {
     return;
   }
 
+  if (photoInput.files && photoInput.files.length > 0 && isProcessingPhotos) {
+    await handleSelectedPhotos();
+  }
+
+  if (photoConversionError) {
+    return;
+  }
+
   if (!observation && selectedPhotos.length === 0) {
     alert("Enter an observation or attach a photo before saving.");
     return;
@@ -237,11 +278,19 @@ async function saveIssue() {
 }
 
 function convertPhotosToBase64(files) {
+  const fileList = Array.from(files || []);
+
+  if (fileList.length === 0) {
+    return Promise.resolve([]);
+  }
+
   return Promise.all(
-    Array.from(files).map(file => {
-      return new Promise(resolve => {
+    fileList.map(file => {
+      return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error(`Could not read file: ${file.name}`));
+        reader.onabort = () => reject(new Error(`Photo read was cancelled: ${file.name}`));
         reader.readAsDataURL(file);
       });
     })
