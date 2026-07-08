@@ -1,14 +1,11 @@
 const STORAGE_KEY = "gptPlantWalks";
 const DRAFT_KEY = "gptPlantWalkDraft";
-const MAX_IMAGE_WIDTH = 1400;
-const IMAGE_QUALITY = 0.72;
 
-let walks = safeLoadWalks();
+let walks = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 let activeWalk = null;
 let recognition = null;
 let isListening = false;
 let selectedPhotos = [];
-let photosAreProcessing = false;
 
 const startWalkBtn = document.getElementById("startWalkBtn");
 const viewWalksBtn = document.getElementById("viewWalksBtn");
@@ -19,7 +16,6 @@ const walkStartedText = document.getElementById("walkStartedText");
 const issueCountBadge = document.getElementById("issueCountBadge");
 const issueText = document.getElementById("issueText");
 const photoInput = document.getElementById("photoInput");
-const photoStatus = document.getElementById("photoStatus");
 const selectedPhotoPreview = document.getElementById("selectedPhotoPreview");
 const saveIssueBtn = document.getElementById("saveIssueBtn");
 const finishWalkBtn = document.getElementById("finishWalkBtn");
@@ -48,24 +44,9 @@ if ("serviceWorker" in navigator) {
 }
 
 restoreDraft();
-updatePhotoStatus();
-
-function safeLoadWalks() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-  } catch (error) {
-    console.error("Unable to load saved walks.", error);
-    return [];
-  }
-}
 
 function persistWalks() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(walks));
-  } catch (error) {
-    alert("The walk could not be saved. The most common cause is photos that are too large. Try deleting older walks or use fewer photos.");
-    console.error("Unable to save walks.", error);
-  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(walks));
 }
 
 function saveDraft() {
@@ -83,7 +64,6 @@ function clearDraft() {
   selectedPhotos = [];
   selectedPhotoPreview.innerHTML = "";
   localStorage.removeItem(DRAFT_KEY);
-  updatePhotoStatus();
 }
 
 function startWalk() {
@@ -105,91 +85,14 @@ function startWalk() {
 }
 
 async function handleSelectedPhotos() {
-  const files = Array.from(photoInput.files || []);
-  selectedPhotos = [];
+  selectedPhotos = await convertPhotosToBase64(photoInput.files);
   selectedPhotoPreview.innerHTML = "";
 
-  if (files.length === 0) {
-    updatePhotoStatus();
-    return;
-  }
-
-  photosAreProcessing = true;
-  saveIssueBtn.disabled = true;
-  photoStatus.textContent = `Processing ${files.length} ${files.length === 1 ? "photo" : "photos"}...`;
-
-  try {
-    selectedPhotos = await Promise.all(files.map(fileToCompressedDataUrl));
-    renderSelectedPhotoPreview();
-  } catch (error) {
-    selectedPhotos = [];
-    selectedPhotoPreview.innerHTML = "";
-    alert("One or more photos could not be loaded. Please try again.");
-    console.error("Photo processing failed.", error);
-  } finally {
-    photosAreProcessing = false;
-    saveIssueBtn.disabled = false;
-    updatePhotoStatus();
-  }
-}
-
-function renderSelectedPhotoPreview() {
-  selectedPhotoPreview.innerHTML = "";
-
-  selectedPhotos.forEach((photo, index) => {
-    const wrapper = document.createElement("figure");
-    wrapper.className = "photo-card";
-
+  selectedPhotos.forEach(photo => {
     const img = document.createElement("img");
     img.src = photo;
     img.className = "photo-preview";
-    img.alt = `Selected issue photo ${index + 1}`;
-
-    const caption = document.createElement("figcaption");
-    caption.textContent = `Photo ${index + 1}`;
-
-    wrapper.appendChild(img);
-    wrapper.appendChild(caption);
-    selectedPhotoPreview.appendChild(wrapper);
-  });
-}
-
-function updatePhotoStatus() {
-  if (photosAreProcessing) return;
-
-  if (selectedPhotos.length === 0) {
-    photoStatus.textContent = "No photos selected.";
-    return;
-  }
-
-  photoStatus.textContent = `${selectedPhotos.length} ${selectedPhotos.length === 1 ? "photo is" : "photos are"} ready and will be saved with this issue.`;
-}
-
-function fileToCompressedDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-
-    reader.onerror = reject;
-    reader.onload = () => {
-      const img = new Image();
-
-      img.onerror = reject;
-      img.onload = () => {
-        const scale = Math.min(1, MAX_IMAGE_WIDTH / img.width);
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.round(img.width * scale);
-        canvas.height = Math.round(img.height * scale);
-
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-        resolve(canvas.toDataURL("image/jpeg", IMAGE_QUALITY));
-      };
-
-      img.src = reader.result;
-    };
-
-    reader.readAsDataURL(file);
+    selectedPhotoPreview.appendChild(img);
   });
 }
 
@@ -198,11 +101,6 @@ async function saveIssue() {
 
   if (!activeWalk) {
     alert("Start a plant walk first.");
-    return;
-  }
-
-  if (photosAreProcessing) {
-    alert("Photos are still processing. Wait for the photo-ready message, then save the issue.");
     return;
   }
 
@@ -215,12 +113,24 @@ async function saveIssue() {
     id: crypto.randomUUID(),
     time: new Date().toLocaleTimeString(),
     observation,
-    photos: [...selectedPhotos]
+    photos: selectedPhotos
   });
 
   persistWalks();
   clearDraft();
   renderIssues();
+}
+
+function convertPhotosToBase64(files) {
+  return Promise.all(
+    Array.from(files).map(file => {
+      return new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.readAsDataURL(file);
+      });
+    })
+  );
 }
 
 function renderIssues() {
@@ -240,26 +150,16 @@ function renderIssues() {
       <strong>Issue ${index + 1}</strong>
       <p><strong>Time:</strong> ${escapeHtml(issue.time)}</p>
       <p>${escapeHtml(issue.observation)}</p>
-      <p><strong>Photos:</strong> ${(issue.photos || []).length}</p>
+      <p><strong>Photos:</strong> ${issue.photos.length}</p>
       <div class="photo-grid"></div>
     `;
 
     const grid = div.querySelector(".photo-grid");
-    (issue.photos || []).forEach((photo, photoIndex) => {
-      const wrapper = document.createElement("figure");
-      wrapper.className = "photo-card";
-
+    issue.photos.forEach(photo => {
       const img = document.createElement("img");
       img.src = photo;
       img.className = "photo-preview";
-      img.alt = `Saved issue ${index + 1} photo ${photoIndex + 1}`;
-
-      const caption = document.createElement("figcaption");
-      caption.textContent = `Photo ${photoIndex + 1}`;
-
-      wrapper.appendChild(img);
-      wrapper.appendChild(caption);
-      grid.appendChild(wrapper);
+      grid.appendChild(img);
     });
 
     issueList.appendChild(div);
@@ -278,14 +178,12 @@ function renderPreviousWalks() {
   }
 
   walks.forEach(walk => {
-    const photoCount = walk.issues.reduce((total, issue) => total + ((issue.photos || []).length), 0);
     const div = document.createElement("div");
     div.className = "walk";
     div.innerHTML = `
       <strong>Plant Walk</strong>
       <p><strong>Started:</strong> ${escapeHtml(walk.startedAt)}</p>
       <p><strong>Total Issues:</strong> ${walk.issues.length}</p>
-      <p><strong>Total Photos:</strong> ${photoCount}</p>
       <button data-id="${walk.id}">Generate Report</button>
     `;
 
@@ -332,12 +230,11 @@ Raw observations:
 `;
 
   walk.issues.forEach((issue, index) => {
-    const photoCount = (issue.photos || []).length;
     report += `Issue ${index + 1}
 Time: ${issue.time}
 Observation:
 ${issue.observation}
-Photos: ${photoCount > 0 ? `Yes - ${photoCount} embedded in PDF report` : "No"}
+Photos: ${issue.photos.length > 0 ? "Yes - embedded in PDF report" : "No"}
 --------------------------------
 
 `;
@@ -347,19 +244,16 @@ Photos: ${photoCount > 0 ? `Yes - ${photoCount} embedded in PDF report` : "No"}
 }
 
 function buildProfessionalReportHtml(walk) {
-  const totalPhotos = walk.issues.reduce((total, issue) => total + ((issue.photos || []).length), 0);
-
   let html = `
     <div class="report-header">
       <h1>Plant Walk Report</h1>
       <p><strong>Started:</strong> ${escapeHtml(walk.startedAt)}</p>
       <p><strong>Total Issues:</strong> ${walk.issues.length}</p>
-      <p><strong>Total Photos:</strong> ${totalPhotos}</p>
     </div>
 
     <section class="report-section">
       <h2>Executive Summary</h2>
-      <p>This report documents maintenance and reliability observations captured during the plant walk, including field photos when provided.</p>
+      <p>This report documents maintenance and reliability observations captured during the plant walk.</p>
     </section>
 
     <section class="report-section">
@@ -367,32 +261,24 @@ function buildProfessionalReportHtml(walk) {
   `;
 
   walk.issues.forEach((issue, index) => {
-    const photos = issue.photos || [];
     html += `
       <div class="report-issue">
         <h3>Issue ${index + 1}</h3>
         <p><strong>Time:</strong> ${escapeHtml(issue.time)}</p>
         <p><strong>Observation:</strong></p>
         <p>${escapeHtml(issue.observation)}</p>
-        <p><strong>Photos:</strong> ${photos.length}</p>
+        <p><strong>Photos:</strong> ${issue.photos.length}</p>
+        <div class="report-photo-grid">
     `;
 
-    if (photos.length > 0) {
-      html += `<div class="report-photo-grid">`;
-      photos.forEach((photo, photoIndex) => {
-        html += `
-          <figure class="report-photo-card">
-            <img class="report-photo" src="${photo}" alt="Issue ${index + 1} photo ${photoIndex + 1}" />
-            <figcaption>Issue ${index + 1} - Photo ${photoIndex + 1}</figcaption>
-          </figure>
-        `;
-      });
-      html += `</div>`;
-    } else {
-      html += `<p class="muted">No photos were saved with this issue.</p>`;
-    }
+    issue.photos.forEach(photo => {
+      html += `<img class="report-photo" src="${photo}" alt="Issue photo" />`;
+    });
 
-    html += `</div>`;
+    html += `
+        </div>
+      </div>
+    `;
   });
 
   html += `
@@ -402,8 +288,8 @@ function buildProfessionalReportHtml(walk) {
       <h2>Maintenance Review Areas</h2>
       <p><strong>Safety Concerns:</strong> Review observations for damaged guarding, exposed electrical conditions, trip hazards, and unsafe operating conditions.</p>
       <p><strong>Immediate Repairs:</strong> Prioritize items affecting safety, production uptime, equipment protection, or compliance.</p>
-      <p><strong>Reliability Concerns:</strong> Review repeated failures, noisy bearings, damaged sensors, loose wiring, worn conveyors, poor accessibility, and recurring stoppages.</p>
-      <p><strong>Engineering Improvements:</strong> Consider guarding, cable management, sensor protection, end effector improvements, PM updates, and design changes to prevent recurrence.</p>
+      <p><strong>Reliability Concerns:</strong> Review repeated failures, noisy bearings, damaged sensors, loose wiring, worn conveyors, and poor accessibility.</p>
+      <p><strong>Engineering Improvements:</strong> Consider guarding, cable management, sensor protection, PM updates, and design changes to prevent recurrence.</p>
     </section>
   `;
 

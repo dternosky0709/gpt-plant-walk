@@ -2,7 +2,11 @@
 
 A Progressive Web App for maintenance plant walks.
 
-## MVP Features
+## Version
+
+v0.1.0
+
+## MVP Features Included
 
 - Start Plant Walk
 - Record Issue
@@ -15,6 +19,28 @@ A Progressive Web App for maintenance plant walks.
 - Installable on iPhone Home Screen
 - Offline capable
 
+## How to Deploy to GitHub Pages
+
+1. Upload all files in this folder to the root of your GitHub repository.
+2. Go to repository Settings.
+3. Open Pages.
+4. Set source to Deploy from branch.
+5. Select branch: main.
+6. Select folder: /root.
+7. Save.
+8. Open the GitHub Pages URL.
+
+## iPhone Install
+
+1. Open the GitHub Pages URL in Safari.
+2. Tap Share.
+3. Tap Add to Home Screen.
+4. Launch GPT Plant Walk from the Home Screen.
+
+## Notes
+
+Voice dictation depends on browser support. Photo capture and offline storage work locally in the browser.
+
 ## Sprint 1
 
 Created the first working PWA foundation using plain HTML, CSS, and JavaScript.
@@ -23,19 +49,6 @@ Created the first working PWA foundation using plain HTML, CSS, and JavaScript.
 
 Added voice dictation and professional printable PDF reporting with embedded photos.
 
-## Sprint 3 / v0.1.1
+## Sprint 3 / v0.1.0
 
-Fixed photo handling and report verification.
-
-- Compresses photos before saving so browser storage is less likely to fail.
-- Shows a clear photo-ready message before saving an issue.
-- Disables Save Issue while photos are processing.
-- Copies selected photos into the issue record at save time.
-- Shows photo counts in previous walks and professional reports.
-- Adds captions to report photos.
-
-## How to Run
-
-Open `index.html` in a browser.
-
-For full PWA install/offline testing, serve the project locally or through GitHub Pages.
+Created a complete deployable project package with app icons, polished UI, offline cache, and GitHub Pages-ready structure.
