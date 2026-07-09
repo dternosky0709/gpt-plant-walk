@@ -1,4 +1,4 @@
-const APP_VERSION = "v0.6.0-alpha2";
+const APP_VERSION = "v0.6.0-alpha3";
 const STORAGE_KEY = "gptPlantWalks";
 const DRAFT_KEY = "gptPlantWalkDraft";
 const ACTIVE_WALK_KEY = "gptPlantWalkActiveWalkId";
