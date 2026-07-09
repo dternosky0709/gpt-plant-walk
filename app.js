@@ -1,9 +1,9 @@
-const APP_VERSION = "v0.4.1-rc7";
+const APP_VERSION = "v0.5.0-alpha4";
 const STORAGE_KEY = "gptPlantWalks";
 const DRAFT_KEY = "gptPlantWalkDraft";
 const ACTIVE_WALK_KEY = "gptPlantWalkActiveWalkId";
 
-let walks = loadWalks();
+let walks = [];
 let activeWalk = null;
 let recognition = null;
 let isListening = false;
@@ -54,9 +54,35 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js");
 }
 
-restoreInterruptedWalk();
+initializeApp();
 
-function loadWalks() {
+async function initializeApp() {
+  try {
+    if (window.appStorage && typeof window.appStorage.initializeStorage === "function") {
+      const storageState = await window.appStorage.initializeStorage();
+      walks = Array.isArray(storageState && storageState.walks) ? storageState.walks : [];
+    } else {
+      walks = (await loadWalks()) || [];
+    }
+  } catch (error) {
+    console.error("Could not initialize walks from storage.", error);
+    walks = [];
+  }
+
+  const activeWalkId = localStorage.getItem(ACTIVE_WALK_KEY);
+  if (activeWalkId) {
+    activeWalk = walks.find(walk => walk.id === activeWalkId && walk.status !== "completed") || null;
+  }
+
+  await restoreInterruptedWalk();
+  renderIssues();
+}
+
+async function loadWalks() {
+  if (window.appStorage && typeof window.appStorage.loadWalks === "function") {
+    return window.appStorage.loadWalks();
+  }
+
   try {
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
     return Array.isArray(stored) ? stored : [];
@@ -67,7 +93,15 @@ function loadWalks() {
 }
 
 function persistWalks() {
+  if (window.appStorage && typeof window.appStorage.saveWalks === "function") {
+    return window.appStorage.saveWalks(walks).catch(error => {
+      console.error("Could not persist walks.", error);
+      throw error;
+    });
+  }
+
   localStorage.setItem(STORAGE_KEY, JSON.stringify(walks));
+  return Promise.resolve();
 }
 
 function persistActiveWalkId() {
@@ -84,17 +118,26 @@ function saveDraft() {
   const draft = {
     walkId: activeWalk.id,
     observation: issueText.value,
-    photos: selectedPhotos,
     updatedAt: new Date().toISOString()
   };
+
+  if (window.appStorage && typeof window.appStorage.saveDraft === "function") {
+    window.appStorage.saveDraft({
+      ...draft,
+      photos: selectedPhotos
+    }).catch(error => {
+      console.error("Could not save draft.", error);
+    });
+    return;
+  }
 
   localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
 }
 
-function restoreDraftForActiveWalk() {
+async function restoreDraftForActiveWalk() {
   if (!activeWalk) return;
 
-  const draft = readDraft();
+  const draft = await readDraft();
   if (!draft || draft.walkId !== activeWalk.id) return;
 
   issueText.value = draft.observation || "";
@@ -102,7 +145,11 @@ function restoreDraftForActiveWalk() {
   renderSelectedPhotos();
 }
 
-function readDraft() {
+async function readDraft() {
+  if (window.appStorage && typeof window.appStorage.loadDraft === "function") {
+    return window.appStorage.loadDraft(activeWalk ? activeWalk.id : null);
+  }
+
   const raw = localStorage.getItem(DRAFT_KEY);
   if (!raw) return null;
 
@@ -110,7 +157,11 @@ function readDraft() {
     const parsed = JSON.parse(raw);
 
     if (parsed && typeof parsed === "object" && "walkId" in parsed) {
-      return parsed;
+      return {
+        walkId: parsed.walkId,
+        observation: parsed.observation || "",
+        photos: []
+      };
     }
 
     return null;
@@ -127,6 +178,14 @@ function clearDraft() {
   photoConversionError = false;
   updateSaveIssueButtonState();
   renderSelectedPhotos();
+
+  if (window.appStorage && typeof window.appStorage.clearDraft === "function") {
+    window.appStorage.clearDraft(activeWalk ? activeWalk.id : null).catch(error => {
+      console.error("Could not clear draft.", error);
+    });
+    return;
+  }
+
   localStorage.removeItem(DRAFT_KEY);
 }
 
@@ -144,10 +203,12 @@ function updateSaveIssueButtonState() {
   saveIssueBtn.disabled = isProcessingPhotos;
 }
 
-function restoreInterruptedWalk() {
+async function restoreInterruptedWalk() {
   const activeWalkId = localStorage.getItem(ACTIVE_WALK_KEY);
   if (!activeWalkId) {
-    localStorage.removeItem(DRAFT_KEY);
+    if (window.appStorage && typeof window.appStorage.clearDraft === "function") {
+      await window.appStorage.clearDraft(null).catch(() => {});
+    }
     return;
   }
 
@@ -155,7 +216,9 @@ function restoreInterruptedWalk() {
 
   if (!activeWalk) {
     localStorage.removeItem(ACTIVE_WALK_KEY);
-    localStorage.removeItem(DRAFT_KEY);
+    if (window.appStorage && typeof window.appStorage.clearDraft === "function") {
+      await window.appStorage.clearDraft(null).catch(() => {});
+    }
     return;
   }
 
@@ -164,7 +227,7 @@ function restoreInterruptedWalk() {
   reportSection.classList.add("hidden");
 
   walkStartedText.textContent = `Started: ${activeWalk.startedAt}`;
-  restoreDraftForActiveWalk();
+  await restoreDraftForActiveWalk();
   renderIssues();
 }
 
@@ -274,7 +337,7 @@ function renderSelectedPhotos() {
   });
 }
 
-function saveIssue() {
+async function saveIssue() {
   try {
     const observation = issueText.value.trim();
 
@@ -297,15 +360,7 @@ function saveIssue() {
 
     activeWalk.issues.push(issue);
 
-    const walkPayload = JSON.stringify(activeWalk);
-    if (walkPayload.length > 180000) {
-      activeWalk.issues.pop();
-      alert("Photo is too large to save. Please retake or choose fewer photos.");
-      return;
-    }
-
-    persistWalks();
-    saveDraft();
+    await persistWalks();
     clearDraft();
     renderIssues();
   } catch (error) {
