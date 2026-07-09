@@ -1,4 +1,4 @@
-const APP_VERSION = "v0.6.1-alpha4";
+const APP_VERSION = "v0.7.0-alpha1";
 const STORAGE_KEY = "gptPlantWalks";
 const DRAFT_KEY = "gptPlantWalkDraft";
 const ACTIVE_WALK_KEY = "gptPlantWalkActiveWalkId";
@@ -511,58 +511,59 @@ function generateReport(walkId) {
 }
 
 function buildChatGptReport(walk) {
-  let report = `GPT PLANT WALK AI ANALYSIS REQUEST
+  let report = `GPT PLANT WALK AI MAINTENANCE REPORT REQUEST
 
 ROLE
-You are acting as a senior Maintenance Manager, Reliability Engineer, Controls Engineer, Safety Coordinator, and Engineering Director reviewing a real plant walk.
+You are acting as a senior Maintenance Manager, Mechanical Maintenance Planner, Reliability Engineer, Controls Engineer, and Engineering Director reviewing a real plant walk.
 
 PRIMARY OBJECTIVE
-Turn the rough observations and attached photos from this plant walk into a professional maintenance and reliability report that can be shared with plant leadership and used to create corrective work orders.
+Create a concise, practical maintenance report that helps the maintenance team decide what to fix, how to fix it, what work orders to create, and what reliability improvements should be considered.
 
-IMPORTANT FIELD-WORKFLOW CONTEXT
-The person performing the walk intentionally captured notes quickly using voice dictation and photos. Do not penalize short, rough, or imperfect observations. Infer structure from the observation text and photos. If details are unclear, state what should be verified in the field.
+FIELD-WORKFLOW CONTEXT
+The plant walk was captured quickly using short voice-dictated observations and photos. Do not require the field user to classify issues during the walk. Infer equipment, area, discipline, priority, likely repair approach, and work order details from the observation text and photos. If uncertain, say what should be verified in the field.
 
-ANALYSIS RULES
-- Analyze every issue independently.
-- Use the written observation first, then use the attached photos for visual context.
-- Do not invent facts that are not supported by the notes or photos.
+REPORT STYLE
+- Be practical and maintenance-focused.
+- Avoid long generic executive-summary language.
+- Avoid boilerplate safety sections unless there is an actual safety concern.
+- Every issue should become a suggested work order unless it is clearly informational only.
+- Give mechanics useful repair direction, not just "inspect and correct."
+- Prioritize the work clearly.
 - Clearly state assumptions and uncertainty.
-- Treat every recorded issue as needing a suggested work order unless it is clearly informational only.
-- Prioritize safety, uptime, equipment protection, and reliability.
-- Write in a practical maintenance-management style.
-
-FOR EACH ISSUE, DETERMINE
-1. Likely equipment or asset involved
-2. Plant area or production line
-3. Maintenance discipline: Mechanical, Electrical, Controls, Safety, Reliability, Housekeeping, Operations, or Other
-4. Observed condition
-5. Likely failure mode
-6. Probable cause, if inferable
-7. Safety risk: None, Low, Medium, High, Critical
-8. Production risk: None, Low, Medium, High, Critical
-9. Reliability impact: None, Low, Medium, High, Critical
-10. Recommended priority: P1 Immediate, P2 Urgent, P3 Planned, P4 Monitor
-11. Suggested corrective action
-12. Suggested work order title
-13. Suggested work order description
-14. Recommended PM improvement
-15. Recommended engineering improvement
-16. Confidence level: High, Medium, or Low
-17. Field verification needed, if any
 
 FINAL REPORT FORMAT
-Create the final response using these sections:
+Use exactly these sections:
 
-1. Executive Summary
-2. Safety Concerns
-3. Immediate Repairs
-4. Suggested Work Orders
-5. Reliability Concerns
-6. Preventive Maintenance Improvements
-7. Engineering Improvements
-8. Prioritized Action List
-9. Issue-by-Issue Analysis
-10. Final Professional Plant Walk Report
+1. Maintenance Summary
+Write one short paragraph summarizing the walk, the main maintenance concerns, and the overall urgency.
+
+2. Prioritized Action List
+Create a table with columns:
+Priority | Issue | Likely Equipment / Area | Suggested WO # | Recommended Action
+Use P1 Immediate, P2 Urgent, P3 Planned, or P4 Monitor.
+
+3. Suggested Work Orders
+For each issue, create a work order in this format:
+WO-001: [Short work order title]
+- Priority:
+- Likely Equipment / Area:
+- Discipline: Mechanical, Electrical, Controls, Safety, Reliability, Housekeeping, or Other
+- Problem Summary:
+- Likely Cause / Failure Mode:
+- Recommended Repair Steps:
+- Suggested Parts / Materials:
+- Estimated Craft:
+- Field Verification Needed:
+- Confidence: High, Medium, or Low
+
+4. Mechanical / Maintenance Repair Notes
+Provide practical repair insight for the maintenance team. Include likely checks, adjustments, replacement steps, inspection points, and what to verify after repair.
+
+5. Reliability / Engineering Notes
+List any PM changes, spare parts recommendations, repeat-failure concerns, design improvements, access improvements, guarding/cable/sensor protection, or reliability follow-up items.
+
+6. Issue Details With Original Notes
+For traceability, list each issue exactly as captured with time, observation, photo count, and any visual context inferred from photos.
 
 PLANT WALK DETAILS
 Walk Started: ${walk.startedAt}
@@ -575,13 +576,14 @@ RAW OBSERVATIONS
 `;
 
   walk.issues.forEach((issue, index) => {
+    const workOrderNumber = String(index + 1).padStart(3, "0");
     report += `Issue ${index + 1}
+Suggested WO #: WO-${workOrderNumber}
 Time: ${issue.time}
 Observation:
 ${issue.observation || "Photo-only issue"}
 Photos: ${issue.photos.length > 0 ? `Yes - ${issue.photos.length} photo(s) embedded in the PDF report` : "No"}
-Work Order Required: Yes - generate a suggested work order from this issue
-AI Categorization Required: Yes - infer equipment, area, discipline, failure mode, priority, risk, corrective action, and PM/engineering improvements
+Instruction: Infer likely equipment, priority, discipline, repair steps, parts, field verification, and reliability/engineering notes from this issue.
 --------------------------------
 
 `;
@@ -591,28 +593,84 @@ AI Categorization Required: Yes - infer equipment, area, discipline, failure mod
 }
 
 function buildProfessionalReportHtml(walk) {
+  const totalPhotos = walk.issues.reduce((count, issue) => count + issue.photos.length, 0);
   let html = `
     <div class="report-header">
+      <p class="report-kicker">MAINTENANCE PLANNING</p>
       <h1>Plant Walk Report</h1>
       <p><strong>Started:</strong> ${escapeHtml(walk.startedAt)}</p>
       <p><strong>Ended:</strong> ${escapeHtml(walk.endedAt || "Not completed")}</p>
       <p><strong>Total Issues:</strong> ${walk.issues.length}</p>
+      <p><strong>Total Photos:</strong> ${totalPhotos}</p>
       <p><strong>App Version:</strong> ${escapeHtml(walk.version || APP_VERSION)}</p>
     </div>
 
     <section class="report-section">
-      <h2>Executive Summary</h2>
-      <p>This report documents ${walk.issues.length} maintenance and reliability observation${walk.issues.length === 1 ? "" : "s"} captured during the plant walk.</p>
-      <p>The field workflow is intentionally fast: observations and photos are captured first, then equipment, area, priority, discipline, safety risk, reliability risk, and work-order recommendations are generated during ChatGPT analysis.</p>
+      <h2>1. Maintenance Summary</h2>
+      <p>This walk captured ${walk.issues.length} maintenance observation${walk.issues.length === 1 ? "" : "s"}. Use the ChatGPT-ready report text to generate the final maintenance summary, work order priorities, repair guidance, and reliability recommendations from the original notes and photos.</p>
     </section>
 
     <section class="report-section">
-      <h2>AI Analysis Instructions</h2>
-      <p>Use the ChatGPT-ready report text to generate an organized maintenance report. For every issue, infer the likely equipment, plant area, maintenance discipline, failure mode, probable cause, safety risk, production risk, reliability impact, priority, corrective action, work order, PM improvement, engineering improvement, and confidence level.</p>
+      <h2>2. Prioritized Action List</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Priority</th>
+            <th>Issue</th>
+            <th>Suggested WO</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+
+  walk.issues.forEach((issue, index) => {
+    const workOrderNumber = String(index + 1).padStart(3, "0");
+    html += `
+          <tr>
+            <td>AI to assign</td>
+            <td>Issue ${index + 1}</td>
+            <td>WO-${workOrderNumber}</td>
+            <td>${escapeHtml(issue.observation || "Photo-only issue")}</td>
+          </tr>
+    `;
+  });
+
+  html += `
+        </tbody>
+      </table>
     </section>
 
     <section class="report-section">
-      <h2>Recorded Issues</h2>
+      <h2>3. Suggested Work Orders</h2>
+  `;
+
+  walk.issues.forEach((issue, index) => {
+    const workOrderNumber = String(index + 1).padStart(3, "0");
+    html += `
+      <div class="report-issue compact-report-issue">
+        <h3>WO-${workOrderNumber}: Issue ${index + 1}</h3>
+        <p><strong>Original Observation:</strong> ${escapeHtml(issue.observation || "Photo-only issue")}</p>
+        <p><strong>AI Planning Needed:</strong> Determine priority, likely equipment/area, discipline, failure mode, repair steps, parts, craft, verification, and confidence from the observation and photo(s).</p>
+      </div>
+    `;
+  });
+
+  html += `
+    </section>
+
+    <section class="report-section">
+      <h2>4. Mechanical / Maintenance Repair Notes</h2>
+      <p>ChatGPT should provide practical repair guidance for each issue, including likely inspection points, adjustments, replacement steps, parts or materials, and post-repair checks.</p>
+    </section>
+
+    <section class="report-section">
+      <h2>5. Reliability / Engineering Notes</h2>
+      <p>ChatGPT should identify PM improvements, spare parts needs, repeat-failure concerns, and engineering improvements such as access changes, guarding, cable management, sensor protection, or design changes.</p>
+    </section>
+
+    <section class="report-section">
+      <h2>6. Issue Details With Original Notes</h2>
   `;
 
   walk.issues.forEach((issue, index) => {
@@ -622,8 +680,6 @@ function buildProfessionalReportHtml(walk) {
         <p><strong>Time:</strong> ${escapeHtml(issue.time)}</p>
         <p><strong>Observation:</strong></p>
         <p>${escapeHtml(issue.observation || "Photo-only issue")}</p>
-        <p><strong>Work Order Required:</strong> Yes - generate during AI analysis</p>
-        <p><strong>AI Categorization:</strong> Equipment, area, priority, discipline, safety risk, reliability risk, and suggested corrective action should be inferred from the observation and photo(s).</p>
         <p><strong>Photos:</strong> ${issue.photos.length}</p>
         <div class="report-photo-grid">
     `;
@@ -639,16 +695,6 @@ function buildProfessionalReportHtml(walk) {
   });
 
   html += `
-    </section>
-
-    <section class="report-section">
-      <h2>Maintenance Review Areas</h2>
-      <p><strong>Safety Concerns:</strong> Review observations and photos for damaged guarding, exposed electrical conditions, trip hazards, pinch points, blocked access, and unsafe operating conditions.</p>
-      <p><strong>Immediate Repairs:</strong> Prioritize items affecting safety, production uptime, equipment protection, or compliance.</p>
-      <p><strong>Suggested Work Orders:</strong> Convert every recorded issue into a corrective work order after AI review and field verification.</p>
-      <p><strong>Reliability Concerns:</strong> Review repeated failures, noisy bearings, vibration, damaged sensors, loose wiring, worn conveyors, leaks, and poor accessibility.</p>
-      <p><strong>PM Improvements:</strong> Identify inspection, lubrication, cleaning, adjustment, and replacement tasks that should be added or revised.</p>
-      <p><strong>Engineering Improvements:</strong> Consider guarding, cable management, sensor protection, access improvements, equipment redesign, and controls improvements to prevent recurrence.</p>
     </section>
   `;
 
