@@ -1,4 +1,4 @@
-const APP_VERSION = "v0.7.1-alpha2";
+const APP_VERSION = "v0.7.2-alpha3";
 const STORAGE_KEY = "gptPlantWalks";
 const DRAFT_KEY = "gptPlantWalkDraft";
 const ACTIVE_WALK_KEY = "gptPlantWalkActiveWalkId";
@@ -113,8 +113,7 @@ async function readDraft() {
   } catch {
     return null;
   }
-}
-
+}\n
 async function restoreDraftForActiveWalk() {
   if (!activeWalk) return;
   const draft = await readDraft();
@@ -471,7 +470,7 @@ function buildProfessionalReportHtml(walk) {
 function copyReport() {
   reportOutput.select();
   document.execCommand("copy");
-  alert("Report copied.");
+  alert("AI prompt copied. Attach the raw Plant Walk PDF in ChatGPT so photos are included in the analysis.");
 }
 
 function focusObservationField() {
