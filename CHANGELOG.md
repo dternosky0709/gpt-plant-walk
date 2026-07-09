@@ -4,6 +4,26 @@ All notable changes to GPT Plant Walk will be documented here.
 
 This project follows milestone-based releases. Each release should include the sprint goal, files changed, key fixes, and remaining TODOs.
 
+## v0.6.0-alpha1 - Sprint 5 Richer Issue Capture
+
+### Added
+- Equipment field for each issue.
+- Location field for each issue.
+- Priority field: Critical, High, Medium, Low.
+- Category field: Mechanical, Electrical, Controls, Safety, Reliability, Housekeeping, Other.
+- Work order required checkbox.
+- Structured metadata display on saved issue cards.
+- Structured metadata in ChatGPT-ready reports.
+- Structured metadata in the professional printable report.
+
+### Changed
+- Draft recovery now includes structured issue fields.
+- New issues default to Medium priority and Reliability category.
+- Report issue cards now show priority badges and maintenance metadata.
+
+### Notes
+- Existing walks remain compatible. Older issues without structured fields will display safe default values where needed.
+
 ## v0.5.0-alpha7 - Sprint 4.2 Report Photo Polish
 
 ### Added
