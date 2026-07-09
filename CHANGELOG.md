@@ -4,6 +4,26 @@ All notable changes to GPT Plant Walk will be documented here.
 
 This project follows milestone-based releases. Each release should include the sprint goal, files changed, key fixes, and remaining TODOs.
 
+## v0.7.0-alpha1 - Sprint 6 Practical Maintenance Report Format
+
+### Added
+- New practical maintenance-planner report format.
+- Maintenance Summary section to replace generic executive/safety boilerplate.
+- Prioritized Action List with suggested work order numbers.
+- Suggested Work Orders section with repair steps, parts/materials, craft, verification, and confidence prompts.
+- Mechanical / Maintenance Repair Notes section.
+- Reliability / Engineering Notes section.
+- Issue Details With Original Notes section for traceability.
+
+### Changed
+- Removed generic final report structure from the ChatGPT-ready prompt.
+- Reduced emphasis on standalone safety/executive summary sections unless actual safety concerns are present.
+- Updated the printable report preview to align with a maintenance planning workflow.
+- Kept the fast single-observation field workflow unchanged.
+
+### Product Decision
+- Reports should answer: what is broken, how serious is it, how should it be repaired, what work orders should be created, and what reliability improvements should be considered.
+
 ## v0.6.1-alpha4 - Sprint 5.1 AI Report Engine
 
 ### Added
