@@ -1,4 +1,4 @@
-const APP_VERSION = "v0.7.2-alpha3";
+const APP_VERSION = "v0.7.3-alpha4";
 const STORAGE_KEY = "gptPlantWalks";
 const DRAFT_KEY = "gptPlantWalkDraft";
 const ACTIVE_WALK_KEY = "gptPlantWalkActiveWalkId";
@@ -113,7 +113,8 @@ async function readDraft() {
   } catch {
     return null;
   }
-}\n
+}
+
 async function restoreDraftForActiveWalk() {
   if (!activeWalk) return;
   const draft = await readDraft();
