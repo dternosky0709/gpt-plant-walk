@@ -1,4 +1,4 @@
-const APP_VERSION = "v0.4.1-rc5";
+const APP_VERSION = "v0.4.1-rc6";
 const STORAGE_KEY = "gptPlantWalks";
 const DRAFT_KEY = "gptPlantWalkDraft";
 const ACTIVE_WALK_KEY = "gptPlantWalkActiveWalkId";
@@ -275,28 +275,69 @@ function renderSelectedPhotos() {
 }
 
 function saveIssue() {
-  const observation = issueText.value.trim();
+  console.log("saveIssue: click handler fired");
+  alert("saveIssue: click handler fired");
 
-  if (!activeWalk) {
-    alert("Start a plant walk first.");
-    return;
+  try {
+    const observation = issueText.value.trim();
+    console.log("saveIssue: observation", observation);
+    console.log("saveIssue: selectedPhotos.length", selectedPhotos.length);
+    alert(`saveIssue: selectedPhotos.length=${selectedPhotos.length}`);
+
+    console.log("saveIssue: activeWalk exists", Boolean(activeWalk));
+    if (!activeWalk) {
+      console.log("saveIssue: no active walk");
+      alert("saveIssue: no active walk");
+      return;
+    }
+
+    console.log("saveIssue: validation start");
+    if (!observation && selectedPhotos.length === 0) {
+      console.log("saveIssue: validation failed");
+      alert("saveIssue: validation failed - no observation and no photos");
+      return;
+    }
+
+    console.log("saveIssue: validation passed");
+    alert("saveIssue: validation passed");
+
+    const issue = {
+      id: crypto.randomUUID(),
+      time: new Date().toLocaleTimeString(),
+      observation,
+      photos: [...selectedPhotos]
+    };
+    console.log("saveIssue: issue object created", issue);
+    alert("saveIssue: issue object created");
+
+    console.log("saveIssue: about to push to activeWalk.issues");
+    activeWalk.issues.push(issue);
+    console.log("saveIssue: activeWalk.issues.push() done");
+    alert("saveIssue: activeWalk.issues.push() done");
+
+    console.log("saveIssue: about to persistWalks");
+    persistWalks();
+    console.log("saveIssue: persistWalks completed");
+    alert("saveIssue: persistWalks completed");
+
+    console.log("saveIssue: about to saveDraft");
+    saveDraft();
+    console.log("saveIssue: saveDraft completed");
+    alert("saveIssue: saveDraft completed");
+
+    console.log("saveIssue: about to clearDraft");
+    clearDraft();
+    console.log("saveIssue: clearDraft completed");
+    alert("saveIssue: clearDraft completed");
+
+    console.log("saveIssue: about to renderIssues");
+    renderIssues();
+    console.log("saveIssue: renderIssues completed");
+    alert("saveIssue: renderIssues completed");
+  } catch (error) {
+    console.error("saveIssue: error", error);
+    alert(`saveIssue: error: ${error && error.message ? error.message : error}`);
   }
-
-  if (!observation && selectedPhotos.length === 0) {
-    alert("Enter an observation or attach a photo before saving.");
-    return;
-  }
-
-  activeWalk.issues.push({
-    id: crypto.randomUUID(),
-    time: new Date().toLocaleTimeString(),
-    observation,
-    photos: [...selectedPhotos]
-  });
-
-  persistWalks();
-  clearDraft();
-  renderIssues();
 }
 
 function convertPhotosToBase64(files, timeoutMs = 10000) {
