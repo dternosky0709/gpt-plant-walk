@@ -131,13 +131,15 @@ input { margin-top: 8px; width: 100%; }
 }
 
 .report-photo {
-  width: 100%;
+  width: auto;
+  max-width: 100%;
   height: auto;
-  max-height: none;
+  max-height: 3.75in;
   object-fit: contain;
   border-radius: 10px;
   border: 1px solid var(--border);
   display: block;
+  margin: 0 auto;
   background: #f7f7f7;
   page-break-inside: avoid;
   break-inside: avoid;
@@ -202,7 +204,8 @@ footer { text-align: center; padding: 16px; color: var(--muted); }
 
   .report-photo {
     max-width: 100%;
-    max-height: 100%;
+    max-height: 3.75in;
     object-fit: contain;
+    margin: 0 auto;
   }
 }
