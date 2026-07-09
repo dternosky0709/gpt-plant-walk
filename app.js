@@ -1,4 +1,4 @@
-const APP_VERSION = "v0.5.0-alpha7";
+const APP_VERSION = "v0.6.0-alpha1";
 const STORAGE_KEY = "gptPlantWalks";
 const DRAFT_KEY = "gptPlantWalkDraft";
 const ACTIVE_WALK_KEY = "gptPlantWalkActiveWalkId";
@@ -19,6 +19,11 @@ const reportSection = document.getElementById("reportSection");
 const walkStartedText = document.getElementById("walkStartedText");
 const issueCountBadge = document.getElementById("issueCountBadge");
 const issueText = document.getElementById("issueText");
+const equipmentInput = document.getElementById("equipmentInput");
+const locationInput = document.getElementById("locationInput");
+const prioritySelect = document.getElementById("prioritySelect");
+const categorySelect = document.getElementById("categorySelect");
+const workOrderRequiredInput = document.getElementById("workOrderRequiredInput");
 const photoInput = document.getElementById("photoInput");
 const selectedPhotoPreview = document.getElementById("selectedPhotoPreview");
 const saveIssueBtn = document.getElementById("saveIssueBtn");
@@ -42,6 +47,11 @@ printPdfBtn.addEventListener("click", () => window.print());
 voiceBtn.addEventListener("click", toggleVoiceDictation);
 clearDraftBtn.addEventListener("click", clearDraft);
 issueText.addEventListener("input", saveDraft);
+equipmentInput.addEventListener("input", saveDraft);
+locationInput.addEventListener("input", saveDraft);
+prioritySelect.addEventListener("change", saveDraft);
+categorySelect.addEventListener("change", saveDraft);
+workOrderRequiredInput.addEventListener("change", saveDraft);
 photoInput.addEventListener("change", handleSelectedPhotos);
 
 if (appVersionText) {
@@ -118,6 +128,11 @@ function saveDraft() {
   const draft = {
     walkId: activeWalk.id,
     observation: issueText.value,
+    equipment: equipmentInput.value,
+    location: locationInput.value,
+    priority: prioritySelect.value,
+    category: categorySelect.value,
+    workOrderRequired: workOrderRequiredInput.checked,
     updatedAt: new Date().toISOString()
   };
 
@@ -141,6 +156,11 @@ async function restoreDraftForActiveWalk() {
   if (!draft || draft.walkId !== activeWalk.id) return;
 
   issueText.value = draft.observation || "";
+  equipmentInput.value = draft.equipment || "";
+  locationInput.value = draft.location || "";
+  prioritySelect.value = draft.priority || "Medium";
+  categorySelect.value = draft.category || "Reliability";
+  workOrderRequiredInput.checked = Boolean(draft.workOrderRequired);
   selectedPhotos = Array.isArray(draft.photos) ? draft.photos : [];
   renderSelectedPhotos();
 }
@@ -160,6 +180,11 @@ async function readDraft() {
       return {
         walkId: parsed.walkId,
         observation: parsed.observation || "",
+        equipment: parsed.equipment || "",
+        location: parsed.location || "",
+        priority: parsed.priority || "Medium",
+        category: parsed.category || "Reliability",
+        workOrderRequired: Boolean(parsed.workOrderRequired),
         photos: []
       };
     }
@@ -172,6 +197,11 @@ async function readDraft() {
 
 function clearDraft() {
   issueText.value = "";
+  equipmentInput.value = "";
+  locationInput.value = "";
+  prioritySelect.value = "Medium";
+  categorySelect.value = "Reliability";
+  workOrderRequiredInput.checked = false;
   photoInput.value = "";
   selectedPhotos = [];
   isProcessingPhotos = false;
@@ -191,6 +221,11 @@ function clearDraft() {
 
 function clearIssueEntryForm() {
   issueText.value = "";
+  equipmentInput.value = "";
+  locationInput.value = "";
+  prioritySelect.value = "Medium";
+  categorySelect.value = "Reliability";
+  workOrderRequiredInput.checked = false;
   photoInput.value = "";
   selectedPhotos = [];
   isProcessingPhotos = false;
@@ -339,24 +374,17 @@ function renderSelectedPhotos() {
 
 async function saveIssue() {
   try {
-    const observation = issueText.value.trim();
+    const issue = buildCurrentIssue();
 
     if (!activeWalk) {
       alert("Start a plant walk first.");
       return;
     }
 
-    if (!observation && selectedPhotos.length === 0) {
+    if (!issue.observation && issue.photos.length === 0) {
       alert("Enter an observation or attach a photo before saving.");
       return;
     }
-
-    const issue = {
-      id: crypto.randomUUID(),
-      time: new Date().toLocaleTimeString(),
-      observation,
-      photos: [...selectedPhotos]
-    };
 
     activeWalk.issues.push(issue);
 
@@ -367,6 +395,20 @@ async function saveIssue() {
     console.error("saveIssue: error", error);
     alert(`Unable to save issue: ${error && error.message ? error.message : error}`);
   }
+}
+
+function buildCurrentIssue() {
+  return {
+    id: crypto.randomUUID(),
+    time: new Date().toLocaleTimeString(),
+    observation: issueText.value.trim(),
+    equipment: equipmentInput.value.trim(),
+    location: locationInput.value.trim(),
+    priority: prioritySelect.value || "Medium",
+    category: categorySelect.value || "Reliability",
+    workOrderRequired: workOrderRequiredInput.checked,
+    photos: [...selectedPhotos]
+  };
 }
 
 function convertPhotosToBase64(files, timeoutMs = 10000) {
@@ -440,8 +482,12 @@ function renderIssues() {
     const div = document.createElement("div");
     div.className = "issue";
     div.innerHTML = `
-      <strong>Issue ${index + 1}</strong>
+      <div class="issue-title-row">
+        <strong>Issue ${index + 1}</strong>
+        <span class="priority-pill priority-${escapeClassName(issue.priority || "Medium")}">${escapeHtml(issue.priority || "Medium")}</span>
+      </div>
       <p><strong>Time:</strong> ${escapeHtml(issue.time)}</p>
+      ${buildIssueMetaHtml(issue)}
       <p>${escapeHtml(issue.observation || "Photo-only issue")}</p>
       <p><strong>Photos:</strong> ${issue.photos.length}</p>
       <div class="photo-grid"></div>
@@ -457,6 +503,17 @@ function renderIssues() {
 
     issueList.appendChild(div);
   });
+}
+
+function buildIssueMetaHtml(issue) {
+  const items = [];
+
+  if (issue.equipment) items.push(`<span><strong>Equipment:</strong> ${escapeHtml(issue.equipment)}</span>`);
+  if (issue.location) items.push(`<span><strong>Location:</strong> ${escapeHtml(issue.location)}</span>`);
+  if (issue.category) items.push(`<span><strong>Category:</strong> ${escapeHtml(issue.category)}</span>`);
+  items.push(`<span><strong>Work Order:</strong> ${issue.workOrderRequired ? "Required" : "Not marked"}</span>`);
+
+  return `<div class="issue-meta">${items.join("")}</div>`;
 }
 
 function renderPreviousWalks() {
@@ -533,6 +590,11 @@ Raw observations:
   walk.issues.forEach((issue, index) => {
     report += `Issue ${index + 1}
 Time: ${issue.time}
+Equipment: ${issue.equipment || "Not specified"}
+Location: ${issue.location || "Not specified"}
+Priority: ${issue.priority || "Medium"}
+Category: ${issue.category || "Reliability"}
+Work Order Required: ${issue.workOrderRequired ? "Yes" : "No"}
 Observation:
 ${issue.observation || "Photo-only issue"}
 Photos: ${issue.photos.length > 0 ? "Yes - embedded in PDF report" : "No"}
@@ -566,8 +628,17 @@ function buildProfessionalReportHtml(walk) {
   walk.issues.forEach((issue, index) => {
     html += `
       <div class="report-issue">
-        <h3>Issue ${index + 1}</h3>
+        <div class="report-issue-header">
+          <h3>Issue ${index + 1}</h3>
+          <span class="priority-pill priority-${escapeClassName(issue.priority || "Medium")}">${escapeHtml(issue.priority || "Medium")}</span>
+        </div>
         <p><strong>Time:</strong> ${escapeHtml(issue.time)}</p>
+        <div class="report-meta-grid">
+          <p><strong>Equipment:</strong> ${escapeHtml(issue.equipment || "Not specified")}</p>
+          <p><strong>Location:</strong> ${escapeHtml(issue.location || "Not specified")}</p>
+          <p><strong>Category:</strong> ${escapeHtml(issue.category || "Reliability")}</p>
+          <p><strong>Work Order Required:</strong> ${issue.workOrderRequired ? "Yes" : "No"}</p>
+        </div>
         <p><strong>Observation:</strong></p>
         <p>${escapeHtml(issue.observation || "Photo-only issue")}</p>
         <p><strong>Photos:</strong> ${issue.photos.length}</p>
@@ -655,6 +726,13 @@ function toggleVoiceDictation() {
     isListening = true;
     voiceBtn.textContent = "Stop Voice Dictation";
   }
+}
+
+function escapeClassName(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 function escapeHtml(value) {
