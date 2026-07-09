@@ -171,6 +171,12 @@ input { margin-top: 8px; width: 100%; }
   padding: 14px;
   margin-top: 14px;
   page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.report-photo-grid {
+  page-break-inside: avoid;
+  break-inside: avoid;
 }
 
 footer { text-align: center; padding: 16px; color: var(--muted); }
@@ -186,4 +192,17 @@ footer { text-align: center; padding: 16px; color: var(--muted); }
   main { max-width: none; padding: 0; }
   .card { box-shadow: none; margin: 0; padding: 0; border: none; }
   #professionalReport { padding: 0; }
+
+  .report-issue,
+  .report-photo-grid,
+  .report-photo {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .report-photo {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
 }
