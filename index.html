@@ -37,6 +37,41 @@
         <span id="issueCountBadge" class="badge">0 Issues</span>
       </div>
 
+      <label for="equipmentInput">Equipment</label>
+      <input id="equipmentInput" type="text" placeholder="Example: Kiln 3, Line 4 Robot, Packaging Conveyor" />
+
+      <label for="locationInput">Location</label>
+      <input id="locationInput" type="text" placeholder="Example: Line 3 Packaging, Manufacturing Line 4" />
+
+      <div class="field-grid">
+        <div>
+          <label for="prioritySelect">Priority</label>
+          <select id="prioritySelect">
+            <option value="Medium">Medium</option>
+            <option value="Critical">Critical</option>
+            <option value="High">High</option>
+            <option value="Low">Low</option>
+          </select>
+        </div>
+        <div>
+          <label for="categorySelect">Category</label>
+          <select id="categorySelect">
+            <option value="Reliability">Reliability</option>
+            <option value="Mechanical">Mechanical</option>
+            <option value="Electrical">Electrical</option>
+            <option value="Controls">Controls</option>
+            <option value="Safety">Safety</option>
+            <option value="Housekeeping">Housekeeping</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+
+      <label class="checkbox-row" for="workOrderRequiredInput">
+        <input id="workOrderRequiredInput" type="checkbox" />
+        <span>Work order required</span>
+      </label>
+
       <label for="issueText">Observation</label>
       <textarea id="issueText" placeholder="Example: Kiln car track 3 limit switch damaged"></textarea>
 
