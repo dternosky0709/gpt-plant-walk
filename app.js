@@ -1,4 +1,4 @@
-const APP_VERSION = "v0.4.1-rc6";
+const APP_VERSION = "v0.4.1-rc7";
 const STORAGE_KEY = "gptPlantWalks";
 const DRAFT_KEY = "gptPlantWalkDraft";
 const ACTIVE_WALK_KEY = "gptPlantWalkActiveWalkId";
@@ -275,31 +275,18 @@ function renderSelectedPhotos() {
 }
 
 function saveIssue() {
-  console.log("saveIssue: click handler fired");
-  alert("saveIssue: click handler fired");
-
   try {
     const observation = issueText.value.trim();
-    console.log("saveIssue: observation", observation);
-    console.log("saveIssue: selectedPhotos.length", selectedPhotos.length);
-    alert(`saveIssue: selectedPhotos.length=${selectedPhotos.length}`);
 
-    console.log("saveIssue: activeWalk exists", Boolean(activeWalk));
     if (!activeWalk) {
-      console.log("saveIssue: no active walk");
-      alert("saveIssue: no active walk");
+      alert("Start a plant walk first.");
       return;
     }
 
-    console.log("saveIssue: validation start");
     if (!observation && selectedPhotos.length === 0) {
-      console.log("saveIssue: validation failed");
-      alert("saveIssue: validation failed - no observation and no photos");
+      alert("Enter an observation or attach a photo before saving.");
       return;
     }
-
-    console.log("saveIssue: validation passed");
-    alert("saveIssue: validation passed");
 
     const issue = {
       id: crypto.randomUUID(),
@@ -307,36 +294,23 @@ function saveIssue() {
       observation,
       photos: [...selectedPhotos]
     };
-    console.log("saveIssue: issue object created", issue);
-    alert("saveIssue: issue object created");
 
-    console.log("saveIssue: about to push to activeWalk.issues");
     activeWalk.issues.push(issue);
-    console.log("saveIssue: activeWalk.issues.push() done");
-    alert("saveIssue: activeWalk.issues.push() done");
 
-    console.log("saveIssue: about to persistWalks");
+    const walkPayload = JSON.stringify(activeWalk);
+    if (walkPayload.length > 180000) {
+      activeWalk.issues.pop();
+      alert("Photo is too large to save. Please retake or choose fewer photos.");
+      return;
+    }
+
     persistWalks();
-    console.log("saveIssue: persistWalks completed");
-    alert("saveIssue: persistWalks completed");
-
-    console.log("saveIssue: about to saveDraft");
     saveDraft();
-    console.log("saveIssue: saveDraft completed");
-    alert("saveIssue: saveDraft completed");
-
-    console.log("saveIssue: about to clearDraft");
     clearDraft();
-    console.log("saveIssue: clearDraft completed");
-    alert("saveIssue: clearDraft completed");
-
-    console.log("saveIssue: about to renderIssues");
     renderIssues();
-    console.log("saveIssue: renderIssues completed");
-    alert("saveIssue: renderIssues completed");
   } catch (error) {
     console.error("saveIssue: error", error);
-    alert(`saveIssue: error: ${error && error.message ? error.message : error}`);
+    alert(`Unable to save issue: ${error && error.message ? error.message : error}`);
   }
 }
 
@@ -355,9 +329,33 @@ function convertPhotosToBase64(files, timeoutMs = 10000) {
         }, timeoutMs);
 
         const reader = new FileReader();
-        reader.onload = () => {
+        reader.onload = event => {
           window.clearTimeout(timeoutId);
-          resolve(reader.result);
+          const dataUrl = event.target.result;
+          if (typeof dataUrl !== "string") {
+            reject(new Error(`Photo data was not available: ${file.name}`));
+            return;
+          }
+
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            const maxWidth = 900;
+            const scale = Math.min(1, maxWidth / img.width);
+            canvas.width = Math.max(1, Math.round(img.width * scale));
+            canvas.height = Math.max(1, Math.round(img.height * scale));
+            const context = canvas.getContext("2d");
+
+            if (!context) {
+              reject(new Error(`Could not prepare photo canvas: ${file.name}`));
+              return;
+            }
+
+            context.drawImage(img, 0, 0, canvas.width, canvas.height);
+            resolve(canvas.toDataURL("image/jpeg", 0.55));
+          };
+          img.onerror = () => reject(new Error(`Could not read photo: ${file.name}`));
+          img.src = dataUrl;
         };
         reader.onerror = () => {
           window.clearTimeout(timeoutId);
