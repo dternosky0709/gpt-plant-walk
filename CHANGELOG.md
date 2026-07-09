@@ -4,6 +4,17 @@ All notable changes to GPT Plant Walk will be documented here.
 
 This project follows milestone-based releases. Each release should include the sprint goal, files changed, key fixes, and remaining TODOs.
 
+## v0.6.0-alpha2 - Sprint 5 Fast Capture Workflow Restored
+
+### Changed
+- Restored the issue capture screen to the fast single-observation workflow.
+- Removed equipment, location, priority, category, and work-order selection fields from the field-entry screen.
+- Updated ChatGPT-ready report instructions so AI categorizes equipment, area, priority, category, safety impact, reliability impact, and suggested work orders from the observation notes and photos.
+- Treats every saved issue as requiring a suggested work order during report analysis.
+
+### Product Decision
+- Field capture must stay fast. Categorization should happen after the walk during report generation and ChatGPT analysis, not during issue entry.
+
 ## v0.6.0-alpha1 - Sprint 5 Richer Issue Capture
 
 ### Added
@@ -23,6 +34,7 @@ This project follows milestone-based releases. Each release should include the s
 
 ### Notes
 - Existing walks remain compatible. Older issues without structured fields will display safe default values where needed.
+- Superseded by v0.6.0-alpha2 after field testing showed the extra input fields slowed the plant walk workflow.
 
 ## v0.5.0-alpha7 - Sprint 4.2 Report Photo Polish
 
@@ -68,4 +80,4 @@ This project follows milestone-based releases. Each release should include the s
 
 ## Project Direction
 
-Next major work begins with Sprint 5: richer issue capture, including equipment, location, priority, and category fields.
+Next major work begins with Sprint 5: keep field capture simple while improving AI/report-side categorization.
