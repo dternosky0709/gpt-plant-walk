@@ -4,6 +4,22 @@ All notable changes to GPT Plant Walk will be documented here.
 
 This project follows milestone-based releases. Each release should include the sprint goal, files changed, key fixes, and remaining TODOs.
 
+## v0.6.1-alpha4 - Sprint 5.1 AI Report Engine
+
+### Added
+- Expanded ChatGPT-ready AI analysis request.
+- Stronger role definition for Maintenance Manager, Reliability Engineer, Controls Engineer, Safety Coordinator, and Engineering Director perspectives.
+- Issue-by-issue AI analysis requirements for equipment, area, discipline, failure mode, probable cause, safety risk, production risk, reliability impact, priority, corrective action, work order, PM improvement, engineering improvement, confidence, and field verification.
+- Professional report section explaining that categorization happens after capture during AI analysis.
+
+### Changed
+- Kept the fast single-observation field workflow.
+- Improved generated prompt consistency so ChatGPT returns more structured maintenance reports.
+- Updated cache-busting script references for this release.
+
+### Product Decision
+- GPT Plant Walk should capture fast in the field and let AI perform classification, prioritization, and work-order planning after the walk.
+
 ## v0.6.0-alpha2 - Sprint 5 Fast Capture Workflow Restored
 
 ### Changed
@@ -80,4 +96,4 @@ This project follows milestone-based releases. Each release should include the s
 
 ## Project Direction
 
-Next major work begins with Sprint 5: keep field capture simple while improving AI/report-side categorization.
+Next major work: continue improving AI/report-side categorization while keeping field capture simple.
