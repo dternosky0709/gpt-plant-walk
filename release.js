@@ -1,4 +1,4 @@
-const RELEASE_VERSION = "v0.9.9-alpha12";
+const RELEASE_VERSION = "v0.9.10-alpha13";
 
 function applyReleaseVersionToActiveWalk() {
   try {
@@ -36,14 +36,15 @@ function appendScript(src, key, onload) {
 }
 
 function loadReleaseAssets() {
-  const build = "0.9.9-alpha12b";
+  const build = "0.9.10-alpha13";
   appendStylesheet("sprint8.css?v=" + build, "sprint8-css");
   appendStylesheet("sprint8-alpha6-fix.css?v=" + build, "sprint8-alpha6-css");
   appendStylesheet("sprint8-alpha7-fix.css?v=" + build, "sprint8-alpha10-css");
+  appendStylesheet("sprint9-renderer.css?v=" + build, "sprint9-renderer-css");
 
   appendScript("sprint8.js?v=" + build, "sprint8-js", function () {
     appendScript("sprint8-alpha7-fix.js?v=" + build, "sprint8-alpha10-js", function () {
-      appendScript("sprint9-lockdown.js?v=" + build, "sprint9-lockdown-js");
+      appendScript("sprint9-renderer.js?v=" + build, "sprint9-renderer-js");
     });
   });
 }
