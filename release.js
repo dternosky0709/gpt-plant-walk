@@ -1,4 +1,4 @@
-const RELEASE_VERSION = "v0.9.11-alpha14";
+const RELEASE_VERSION = "v0.9.12-alpha15";
 
 function applyReleaseVersionToActiveWalk() {
   try {
@@ -36,7 +36,7 @@ function appendScript(src, key, onload) {
 }
 
 function loadReleaseAssets() {
-  const build = "0.9.11-alpha14";
+  const build = "0.9.12-alpha15";
   appendStylesheet("sprint8.css?v=" + build, "sprint8-css");
   appendStylesheet("sprint8-alpha6-fix.css?v=" + build, "sprint8-alpha6-css");
   appendStylesheet("sprint8-alpha7-fix.css?v=" + build, "sprint8-alpha10-css");
