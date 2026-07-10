@@ -1,28 +1,8 @@
 (() => {
-  const VERSION = "v0.9.7-alpha10";
-  const FOOTER_TEXT = `GPT Plant Walk ${VERSION} — Sprint 8 Alpha 10`;
-
-  function setVersion() {
-    const footer = document.getElementById("appVersionText");
-    if (footer) footer.textContent = FOOTER_TEXT;
-
-    document.querySelectorAll(".about-row").forEach(row => {
-      const label = row.querySelector("span");
-      const value = row.querySelector("strong");
-      if (label && value && label.textContent.trim() === "App Version") {
-        value.textContent = VERSION;
-      }
-    });
-
-    try {
-      if (typeof activeWalk !== "undefined" && activeWalk) activeWalk.version = VERSION;
-    } catch (error) {
-      console.error("Could not apply Sprint 8 Alpha 10 version.", error);
-    }
-  }
+  const VERSION = "v0.9.8-alpha11";
 
   function updatePrintedVersion(host) {
-    host.querySelectorAll(".report-meta-grid p").forEach(item => {
+    host.querySelectorAll(".report-meta-grid p, .report-header p").forEach(item => {
       if (item.textContent.trim().startsWith("App Version:")) {
         item.innerHTML = `<strong>App Version:</strong> ${VERSION}`;
       }
@@ -49,8 +29,6 @@
         host.insertAdjacentHTML("beforeend", pageBuilder(walk, issue, index));
       });
 
-      // Safari can omit the last printable node. This invisible forced break protects
-      // the final work order without adding a visible completion/test page.
       host.insertAdjacentHTML(
         "beforeend",
         '<div class="work-order-print-terminator" aria-hidden="true">.</div>'
@@ -69,18 +47,9 @@
     return true;
   }
 
-  setVersion();
-
   let attempts = 0;
   const timer = window.setInterval(() => {
     attempts += 1;
-    setVersion();
-    installFinalPacketBuilder();
-    if (attempts >= 80) window.clearInterval(timer);
+    if (installFinalPacketBuilder() || attempts >= 80) window.clearInterval(timer);
   }, 100);
-
-  window.addEventListener("pageshow", setVersion);
-  document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) setVersion();
-  });
 })();
