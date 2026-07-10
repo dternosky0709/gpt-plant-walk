@@ -1,13 +1,11 @@
-const RELEASE_VERSION = "v0.9.7-alpha10";
+const RELEASE_VERSION = "v0.9.8-alpha11";
 
 function applyReleaseVersionToActiveWalk() {
   try {
     if (typeof activeWalk !== "undefined" && activeWalk && activeWalk.version !== RELEASE_VERSION) {
       activeWalk.version = RELEASE_VERSION;
       if (typeof persistWalks === "function") {
-        Promise.resolve(persistWalks()).catch(error => {
-          console.error("Could not persist release version.", error);
-        });
+        Promise.resolve(persistWalks()).catch(error => console.error("Could not persist release version.", error));
       }
     }
   } catch (error) {
@@ -16,7 +14,7 @@ function applyReleaseVersionToActiveWalk() {
 }
 
 function appendStylesheet(href, key) {
-  if (document.querySelector(`link[data-release-asset="${key}"]`)) return;
+  if (document.querySelector('link[data-release-asset="' + key + '"]')) return;
   const stylesheet = document.createElement("link");
   stylesheet.rel = "stylesheet";
   stylesheet.href = href;
@@ -25,7 +23,7 @@ function appendStylesheet(href, key) {
 }
 
 function appendScript(src, key, onload) {
-  if (document.querySelector(`script[data-release-asset="${key}"]`)) {
+  if (document.querySelector('script[data-release-asset="' + key + '"]')) {
     if (onload) onload();
     return;
   }
@@ -37,22 +35,24 @@ function appendScript(src, key, onload) {
   document.body.appendChild(script);
 }
 
-function loadSprint8Assets() {
-  appendStylesheet("sprint8.css?v=0.9.7-alpha10", "sprint8-css");
-  appendStylesheet("sprint8-alpha6-fix.css?v=0.9.7-alpha10", "sprint8-alpha6-css");
-  appendStylesheet("sprint8-alpha7-fix.css?v=0.9.7-alpha10", "sprint8-alpha10-css");
+function loadReleaseAssets() {
+  appendStylesheet("sprint8.css?v=0.9.8-alpha11", "sprint8-css");
+  appendStylesheet("sprint8-alpha6-fix.css?v=0.9.8-alpha11", "sprint8-alpha6-css");
+  appendStylesheet("sprint8-alpha7-fix.css?v=0.9.8-alpha11", "sprint8-alpha10-css");
 
-  appendScript("sprint8.js?v=0.9.7-alpha10", "sprint8-js", () => {
-    appendScript("sprint8-alpha7-fix.js?v=0.9.7-alpha10", "sprint8-alpha10-js");
+  appendScript("sprint8.js?v=0.9.8-alpha11", "sprint8-js", function () {
+    appendScript("sprint8-alpha7-fix.js?v=0.9.8-alpha11", "sprint8-alpha10-js", function () {
+      appendScript("sprint9.js?v=0.9.8-alpha11", "sprint9-js");
+    });
   });
 }
 
 const releaseStartButton = document.getElementById("startWalkBtn");
 if (releaseStartButton) {
-  releaseStartButton.addEventListener("click", () => {
+  releaseStartButton.addEventListener("click", function () {
     window.setTimeout(applyReleaseVersionToActiveWalk, 0);
   });
 }
 
-loadSprint8Assets();
+loadReleaseAssets();
 window.setTimeout(applyReleaseVersionToActiveWalk, 500);
