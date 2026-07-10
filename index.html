@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GPT Plant Walk</title>
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="styles.css?v=0.7.4-sprint6-final" />
+  <link rel="stylesheet" href="styles.css?v=0.8.0-alpha1" />
   <meta name="theme-color" content="#173826" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Plant Walk" />
@@ -14,73 +14,150 @@
 </head>
 <body>
   <header class="app-header no-print">
-    <div>
-      <h1>GPT Plant Walk</h1>
-      <p>Maintenance observations, photos, reports, and ChatGPT-ready summaries.</p>
+    <div class="header-row">
+      <div>
+        <h1>GPT Plant Walk</h1>
+        <p>Maintenance observations, photos, reports, and ChatGPT-ready summaries.</p>
+      </div>
+      <button id="settingsBtn" class="icon-button" type="button" aria-label="Open Settings">⚙︎</button>
     </div>
   </header>
 
   <main>
-    <section class="card no-print hero-card">
-      <h2>Plant Walk Dashboard</h2>
-      <p>Start a new walk, capture issues, attach photos, and generate a professional report.</p>
-      <button id="startWalkBtn">Start Plant Walk</button>
-      <button id="viewWalksBtn" class="secondary">Previous Walks</button>
-    </section>
+    <section id="dashboardSection">
+      <section class="card no-print hero-card">
+        <h2>Plant Walk Dashboard</h2>
+        <p>Start a new walk, capture issues, attach photos, and generate a professional report.</p>
+        <button id="startWalkBtn">Start Plant Walk</button>
+        <button id="viewWalksBtn" class="secondary">Previous Walks</button>
+      </section>
 
-    <section id="activeWalkSection" class="card hidden no-print">
-      <div class="section-title-row">
-        <div>
-          <h2>Active Walk</h2>
-          <p id="walkStartedText" class="muted"></p>
+      <section id="activeWalkSection" class="card hidden no-print">
+        <div class="section-title-row">
+          <div>
+            <h2>Active Walk</h2>
+            <p id="walkStartedText" class="muted"></p>
+          </div>
+          <span id="issueCountBadge" class="badge">0 Issues</span>
         </div>
-        <span id="issueCountBadge" class="badge">0 Issues</span>
-      </div>
 
-      <label for="issueText">Observation</label>
-      <textarea id="issueText" placeholder="Describe what you see. Example: Transfer car main drive is noisy; inspect bearings and lubrication."></textarea>
-      <p class="muted">Tap the observation box and use your phone keyboard microphone for voice dictation.</p>
+        <label for="issueText">Observation</label>
+        <textarea id="issueText" placeholder="Describe what you see. Example: Transfer car main drive is noisy; inspect bearings and lubrication."></textarea>
+        <p class="muted">Tap the observation box and use your phone keyboard microphone for voice dictation.</p>
 
-      <div class="button-grid">
-        <button id="voiceBtn" class="secondary" hidden aria-hidden="true" tabindex="-1">Voice Dictation</button>
-        <button id="clearDraftBtn" class="danger">Clear Draft</button>
-      </div>
+        <div class="button-grid">
+          <button id="voiceBtn" class="secondary" hidden aria-hidden="true" tabindex="-1">Voice Dictation</button>
+          <button id="clearDraftBtn" class="danger">Clear Draft</button>
+        </div>
 
-      <label for="photoInput">Photos</label>
-      <input id="photoInput" type="file" accept="image/*" capture="environment" multiple />
-      <div id="selectedPhotoPreview" class="photo-grid"></div>
+        <label for="photoInput">Photos</label>
+        <input id="photoInput" type="file" accept="image/*" capture="environment" multiple />
+        <div id="selectedPhotoPreview" class="photo-grid"></div>
 
-      <button id="saveIssueBtn">Save Issue</button>
-      <button id="finishWalkBtn" class="secondary">Finish Walk / Generate Report</button>
+        <button id="saveIssueBtn">Save Issue</button>
+        <button id="finishWalkBtn" class="secondary">Finish Walk / Generate Report</button>
 
-      <h3>Saved Issues</h3>
-      <div id="issueList"></div>
+        <h3>Saved Issues</h3>
+        <div id="issueList"></div>
+      </section>
+
+      <section id="previousWalksSection" class="card hidden no-print">
+        <h2>Previous Walks</h2>
+        <div id="walkList"></div>
+      </section>
+
+      <section id="reportSection" class="card hidden">
+        <div class="report-actions no-print">
+          <p class="muted"><strong>Current AI workflow:</strong> 1) Save the Raw Plant Walk PDF, 2) Copy the AI Prompt, 3) paste the prompt into ChatGPT and attach the PDF.</p>
+          <button id="printPdfBtn" class="secondary">Save Raw Plant Walk PDF</button>
+          <button id="copyReportBtn">Copy AI Prompt</button>
+        </div>
+
+        <h2 class="no-print">ChatGPT-Ready AI Prompt</h2>
+        <textarea id="reportOutput" class="no-print" readonly></textarea>
+        <article id="professionalReport"></article>
+      </section>
     </section>
 
-    <section id="previousWalksSection" class="card hidden no-print">
-      <h2>Previous Walks</h2>
-      <div id="walkList"></div>
-    </section>
-
-    <section id="reportSection" class="card hidden">
-      <div class="report-actions no-print">
-        <p class="muted"><strong>Current AI workflow:</strong> 1) Save the Raw Plant Walk PDF, 2) Copy the AI Prompt, 3) paste the prompt into ChatGPT and attach the PDF.</p>
-        <button id="printPdfBtn" class="secondary">Save Raw Plant Walk PDF</button>
-        <button id="copyReportBtn">Copy AI Prompt</button>
+    <section id="settingsSection" class="card hidden no-print settings-page">
+      <div class="settings-heading">
+        <div>
+          <p class="settings-kicker">APP SETUP</p>
+          <h2>Settings</h2>
+        </div>
+        <button id="closeSettingsBtn" type="button" class="secondary compact-button">Done</button>
       </div>
 
-      <h2 class="no-print">ChatGPT-Ready AI Prompt</h2>
-      <textarea id="reportOutput" class="no-print" readonly></textarea>
+      <form id="settingsForm">
+        <div class="settings-group">
+          <h3>Company</h3>
+          <label for="companyNameInput">Company Name</label>
+          <input id="companyNameInput" type="text" placeholder="Example: Iron Rock" />
+          <label for="plantNameInput">Plant Name</label>
+          <input id="plantNameInput" type="text" placeholder="Example: Canton Plant" />
+          <label for="plantCodeInput">Plant Code</label>
+          <input id="plantCodeInput" type="text" placeholder="Example: IR" maxlength="12" />
+        </div>
 
-      <article id="professionalReport"></article>
+        <div class="settings-group">
+          <h3>Work Orders</h3>
+          <label for="workOrderFormatInput">Work Order Number Format</label>
+          <input id="workOrderFormatInput" type="text" value="PW-{DATE}-{SEQ}" />
+          <p class="muted token-help">Available: {PLANT}, {DATE}, {YEAR}, {MONTH}, {DAY}, {SEQ}</p>
+
+          <div class="settings-grid">
+            <div>
+              <label for="sequenceStartInput">Next Sequence</label>
+              <input id="sequenceStartInput" type="number" min="1" value="1" />
+            </div>
+            <div>
+              <label for="sequenceDigitsInput">Sequence Digits</label>
+              <select id="sequenceDigitsInput">
+                <option value="2">2</option>
+                <option value="3" selected>3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="preview-card">
+            <span>Preview</span>
+            <strong id="workOrderPreview">PW-20260709-001</strong>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <h3>Appearance</h3>
+          <label class="choice-row">
+            <input type="radio" name="theme" value="light" checked />
+            <span><strong>Light Mode</strong><small>Bright background for normal use</small></span>
+          </label>
+          <label class="choice-row">
+            <input type="radio" name="theme" value="dark" />
+            <span><strong>Dark Mode</strong><small>Reduced glare in low-light areas</small></span>
+          </label>
+        </div>
+
+        <div class="settings-group">
+          <h3>About</h3>
+          <div class="about-row"><span>App Version</span><strong>v0.8.0-alpha1</strong></div>
+          <div class="about-row"><span>Work Order Standard</span><strong>v1.0</strong></div>
+          <div class="about-row"><span>Storage</span><strong>Local / IndexedDB</strong></div>
+        </div>
+
+        <button type="submit">Save Settings</button>
+        <p id="settingsSavedMessage" class="saved-message hidden">Settings saved.</p>
+      </form>
     </section>
   </main>
 
   <footer class="no-print">
-    <p>GPT Plant Walk v0.7.4 — Sprint 6 Final</p>
+    <p id="appVersionText">GPT Plant Walk v0.8.0-alpha1</p>
   </footer>
 
-  <script src="storage.js?v=0.7.4-sprint6-final"></script>
-  <script src="app.js?v=0.7.4-sprint6-final"></script>
+  <script src="storage.js?v=0.8.0-alpha1"></script>
+  <script src="app.js?v=0.8.0-alpha1"></script>
+  <script src="settings.js?v=0.8.0-alpha1"></script>
 </body>
 </html>
