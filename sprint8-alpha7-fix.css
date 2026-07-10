@@ -33,6 +33,21 @@
     break-before: page !important;
   }
 
+  .work-order-print-terminator {
+    display: block !important;
+    width: 1px !important;
+    height: 1px !important;
+    min-height: 1px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    font-size: 1px !important;
+    line-height: 1px !important;
+    color: transparent !important;
+    break-before: auto !important;
+    page-break-before: auto !important;
+  }
+
   .wo-header-card {
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   }
