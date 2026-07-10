@@ -1,9 +1,24 @@
 (() => {
-  const VERSION = "v0.9.4-alpha7";
+  const VERSION = "v0.9.5-alpha8";
+  const FOOTER_TEXT = `GPT Plant Walk ${VERSION} — Sprint 8 Alpha 8`;
 
   function setVersion() {
     const footer = document.getElementById("appVersionText");
-    if (footer) footer.textContent = `GPT Plant Walk ${VERSION} — Sprint 8 Alpha 7`;
+    if (footer) footer.textContent = FOOTER_TEXT;
+
+    document.querySelectorAll(".about-row").forEach(row => {
+      const label = row.querySelector("span");
+      const value = row.querySelector("strong");
+      if (label && value && label.textContent.trim() === "App Version") {
+        value.textContent = VERSION;
+      }
+    });
+
+    try {
+      if (typeof activeWalk !== "undefined" && activeWalk) activeWalk.version = VERSION;
+    } catch (error) {
+      console.error("Could not apply Sprint 8 Alpha 8 version.", error);
+    }
   }
 
   function updatePrintedVersion(host) {
@@ -18,19 +33,28 @@
     const currentBuilder = window.buildProfessionalReportHtml;
     const pageBuilder = window.buildSprint8WorkOrderPage;
     if (typeof currentBuilder !== "function" || typeof pageBuilder !== "function") return false;
-    if (currentBuilder.__alpha7Wrapped) return true;
+    if (currentBuilder.__alpha8Wrapped) return true;
 
-    function alpha7Builder(walk) {
+    function alpha8Builder(walk) {
       const host = document.createElement("div");
       host.innerHTML = currentBuilder(walk);
       updatePrintedVersion(host);
 
-      host.querySelectorAll(".work-order-page, .work-order-pages, .work-order-packet-heading").forEach(node => node.remove());
+      host.querySelectorAll(
+        ".work-order-page, .work-order-pages, .work-order-packet-heading, .work-order-print-terminator"
+      ).forEach(node => node.remove());
 
       const issues = Array.isArray(walk && walk.issues) ? walk.issues : [];
       issues.forEach((issue, index) => {
         host.insertAdjacentHTML("beforeend", pageBuilder(walk, issue, index));
       });
+
+      // Safari can omit the final page when the last work order is the final printable node.
+      // A tiny trailing print node forces the browser to commit the preceding page.
+      host.insertAdjacentHTML(
+        "beforeend",
+        '<div class="work-order-print-terminator" aria-hidden="true">&nbsp;</div>'
+      );
 
       const generated = host.querySelectorAll(".work-order-page").length;
       if (generated !== issues.length) {
@@ -40,16 +64,23 @@
       return host.innerHTML;
     }
 
-    alpha7Builder.__alpha7Wrapped = true;
-    window.buildProfessionalReportHtml = alpha7Builder;
+    alpha8Builder.__alpha8Wrapped = true;
+    window.buildProfessionalReportHtml = alpha8Builder;
     return true;
   }
 
   setVersion();
+
   let attempts = 0;
   const timer = window.setInterval(() => {
     attempts += 1;
     setVersion();
-    if (installFinalPacketBuilder() || attempts >= 60) window.clearInterval(timer);
+    installFinalPacketBuilder();
+    if (attempts >= 40) window.clearInterval(timer);
   }, 100);
+
+  window.addEventListener("pageshow", setVersion);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) setVersion();
+  });
 })();
