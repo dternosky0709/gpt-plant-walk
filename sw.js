@@ -1,4 +1,4 @@
-const CACHE_NAME = "gpt-plant-walk-v0-8-2-rc1";
+const CACHE_NAME = "gpt-plant-walk-v0-8-2-rc1b";
 
 const FILES_TO_CACHE = [
   "./",
@@ -8,6 +8,7 @@ const FILES_TO_CACHE = [
   "./storage.js",
   "./app.js",
   "./settings.js",
+  "./release.js",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png"
