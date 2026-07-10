@@ -1,4 +1,4 @@
-const RELEASE_VERSION = "v0.8.2-rc1";
+const RELEASE_VERSION = "v0.8.3";
 
 function applyReleaseVersionToActiveWalk() {
   try {
