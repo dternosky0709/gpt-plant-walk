@@ -1,0 +1,92 @@
+.report-branding {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.report-company-logo {
+  display: block;
+  max-width: 180px;
+  max-height: 72px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.report-branding-text {
+  min-width: 0;
+}
+
+.report-company-name {
+  color: #173826;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.report-plant-name {
+  color: #5f6c65;
+  font-size: 14px;
+  font-weight: 700;
+  margin-top: 3px;
+}
+
+.report-title-block {
+  border-top: 1px solid #d8ded9;
+  padding-top: 12px;
+}
+
+.report-kicker {
+  margin: 0 0 4px;
+  color: #68736d;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+#professionalReport table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#professionalReport th,
+#professionalReport td {
+  border: 1px solid #cfd6d1;
+  padding: 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
+#professionalReport th {
+  background: #eef2ee;
+  color: #173826;
+}
+
+@media (max-width: 520px) {
+  .report-branding {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .report-company-logo {
+    max-width: 150px;
+    max-height: 64px;
+  }
+}
+
+@media print {
+  .report-branding {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .report-company-logo {
+    max-width: 1.9in;
+    max-height: 0.75in;
+  }
+
+  .report-company-name {
+    color: #173826;
+  }
+}
