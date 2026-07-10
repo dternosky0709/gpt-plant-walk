@@ -1,8 +1,8 @@
 (() => {
   "use strict";
 
-  const VERSION = "v0.9.11-alpha14";
-  const FOOTER_TEXT = `GPT Plant Walk ${VERSION} — Sprint 9 Direct Packet`;
+  const VERSION = "v0.9.12-alpha15";
+  const FOOTER_TEXT = `GPT Plant Walk ${VERSION} — Sprint 9.1 Layout Polish`;
 
   function getSettings() {
     return window.gptPlantWalkSettings || {};
@@ -39,7 +39,8 @@ Review the attached GPT Plant Walk source PDF in full, including every page and 
 SOURCE AUTHORITY
 - The attached source PDF is authoritative for original observations, timestamps, issue order, work-order numbers, branding, and photos.
 - Review the actual source PDF pages visually.
-- The source PDF already contains examples of the approved Work Order Standard v1.0 pages. Use those printed work-order pages as the visual template.
+- The source PDF contains examples of the approved work-order visual style. Use their overall green branding, rounded boxes, spacing, and one-page structure as the visual reference.
+- Apply the Work Order Standard v1.1 corrections below even when an older source page shows a Status field, Complete checkbox, likely-parts text, or a tighter top table.
 - Preserve original observations verbatim in traceability and work-order Initial Observation sections.
 - Do not invent facts. Clearly state field verification when evidence is incomplete.
 
@@ -58,25 +59,30 @@ PHOTO CONTROL — NON-NEGOTIABLE
 - Do not substitute, crop away relevant content, or move a photo to another issue.
 - When an issue has no photo, do not create one.
 
-APPROVED VISUAL STANDARD — WORK ORDER STANDARD v1.0
-The work-order pages must closely reproduce the approved pages already printed near the end of the source PDF. Do not redesign them.
+APPROVED VISUAL STANDARD — WORK ORDER STANDARD v1.1
+The work-order pages must closely reproduce the approved green pages near the end of the source PDF, with these required corrections. Do not redesign them.
 Required visual traits:
 - White one-page form with dark green headings and accent rule.
 - Company logo/name and plant name at upper left when present.
 - MAINTENANCE WORK ORDER and exact work-order number at upper right.
-- Rounded, light-gray bordered section boxes with consistent left/right margins.
-- Compact top information table.
+- Rounded, light-gray bordered section boxes with identical left/right margins.
+- Compact top information area containing only Priority, Trade, Reported, and Likely Equipment / Area.
+- Do not include Status, Complete, Follow-up, or production-impact fields.
+- Priority, Trade, and Reported must each remain fully inside their own cells.
+- Allow Trade to wrap to two lines without touching the next row or border.
+- Put Likely Equipment / Area on a separate full-width row below Priority / Trade / Reported.
+- Give both header rows enough height for wrapped text; vertically center values and keep at least 6 points of internal padding.
+- Long equipment or area names must wrap inside the box. Never allow text to cross, overlap, or sit on a border line.
 - Initial Observation with matching photo in a compact bordered photo box when available.
 - Suggested Corrective Actions shown as practical checkbox lines.
 - Large blank Technician — Work Performed / Findings writing area.
-- Parts Used section with blank table: Part Number | Description | Qty.
+- Parts Used section containing only a blank table: Part Number | Description | Qty.
+- Do not print Likely Parts Needed, suggested materials, likely materials, or any prefilled part recommendations on the work-order page.
 - Labor section with blank Technician(s) and Actual Labor Time ____ Hours.
-- Completion / Sign-Off with blank Completed By, Date, and Time.
-- Small Work Order Standard v1.0 footer.
+- Completion / Sign-Off with blank Completed By, Date, and Time only.
+- Small Work Order Standard v1.1 footer.
 - Keep each work order on one page.
 - Do not use plain black grid tables as the page design.
-- Do not add a work-order status field.
-- Do not add production impact.
 
 MAINTENANCE ANALYSIS STANDARD
 For every issue determine:
@@ -86,9 +92,10 @@ For every issue determine:
 - Concise problem statement.
 - Credible likely cause with uncertainty stated.
 - Specific corrective actions useful to a mechanic; never use generic wording such as “repair, inspect and verify.”
-- Likely parts or materials, or “Verify in field” when unsupported.
 - Post-repair verification steps.
 - Do not estimate labor time.
+- Do not guess replacement parts. The mechanic will record actual parts used in the blank Parts Used table.
+- Parts may be discussed in the maintenance report only when clearly supported, but do not prefill them on work-order pages.
 
 FINAL PACKET ORDER
 1. Maintenance Summary — one short paragraph.
@@ -96,7 +103,7 @@ FINAL PACKET ORDER
 3. Maintenance / Repair Notes — concise and organized by work-order number.
 4. Reliability / Engineering Notes — only useful, evidence-supported recommendations.
 5. Issue Details With Original Notes — exact observations, times, photo counts, and concise visual context.
-6. Exactly ${issues.length} Work Order Standard v1.0 pages in original issue order.
+6. Exactly ${issues.length} Work Order Standard v1.1 pages in original issue order.
 
 COMPANY / WALK
 Company: ${settings.companyName || "Not configured"}
@@ -117,7 +124,11 @@ FINAL QUALITY CHECK BEFORE DELIVERY
 - Confirm every exact work-order number is preserved.
 - Confirm each issue photo appears on the correct work-order page.
 - Confirm the work-order pages visually follow the approved source-PDF template rather than a generic table form.
-- Confirm mechanic-completion fields are blank.
+- Confirm Priority, Trade, Reported, and Likely Equipment / Area do not overlap or cross box borders.
+- Confirm Likely Equipment / Area is on its own full-width row.
+- Confirm there is no Status field, Complete checkbox, Follow-up checkbox, production-impact field, likely-parts text, or suggested-materials text.
+- Confirm the Parts Used table is blank.
+- Confirm Technician(s), Actual Labor Time, Completed By, Date, and Time are blank.
 - Confirm there is no JSON, test page, or blank trailing page.`;
   }
 
@@ -140,6 +151,7 @@ FINAL QUALITY CHECK BEFORE DELIVERY
       const label = row.querySelector("span");
       const value = row.querySelector("strong");
       if (label && value && label.textContent.trim() === "App Version") value.textContent = VERSION;
+      if (label && value && label.textContent.trim() === "Work Order Standard") value.textContent = "v1.1";
     });
 
     const button = document.getElementById("copyReportBtn");
@@ -151,7 +163,7 @@ FINAL QUALITY CHECK BEFORE DELIVERY
     try {
       if (typeof activeWalk !== "undefined" && activeWalk) activeWalk.version = VERSION;
     } catch (error) {
-      console.error("Could not apply Sprint 9 direct packet version.", error);
+      console.error("Could not apply Sprint 9.1 version.", error);
     }
   }
 
