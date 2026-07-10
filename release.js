@@ -1,4 +1,4 @@
-const RELEASE_VERSION = "v0.9.2-alpha5";
+const RELEASE_VERSION = "v0.9.3-alpha6";
 
 function applyReleaseVersionToActiveWalk() {
   try {
@@ -15,22 +15,34 @@ function applyReleaseVersionToActiveWalk() {
   }
 }
 
-function loadSprint8Assets() {
-  if (!document.querySelector('link[data-sprint8="true"]')) {
-    const stylesheet = document.createElement("link");
-    stylesheet.rel = "stylesheet";
-    stylesheet.href = "sprint8.css?v=0.9.2-alpha5";
-    stylesheet.dataset.sprint8 = "true";
-    document.head.appendChild(stylesheet);
-  }
+function appendStylesheet(href, key) {
+  if (document.querySelector(`link[data-release-asset="${key}"]`)) return;
+  const stylesheet = document.createElement("link");
+  stylesheet.rel = "stylesheet";
+  stylesheet.href = href;
+  stylesheet.dataset.releaseAsset = key;
+  document.head.appendChild(stylesheet);
+}
 
-  if (!document.querySelector('script[data-sprint8="true"]')) {
-    const script = document.createElement("script");
-    script.src = "sprint8.js?v=0.9.2-alpha5";
-    script.dataset.sprint8 = "true";
-    script.defer = true;
-    document.body.appendChild(script);
+function appendScript(src, key, onload) {
+  if (document.querySelector(`script[data-release-asset="${key}"]`)) {
+    if (onload) onload();
+    return;
   }
+  const script = document.createElement("script");
+  script.src = src;
+  script.async = false;
+  script.dataset.releaseAsset = key;
+  if (onload) script.onload = onload;
+  document.body.appendChild(script);
+}
+
+function loadSprint8Assets() {
+  appendStylesheet("sprint8.css?v=0.9.3-alpha6", "sprint8-css");
+  appendStylesheet("sprint8-alpha6-fix.css?v=0.9.3-alpha6", "sprint8-alpha6-css");
+  appendScript("sprint8.js?v=0.9.3-alpha6", "sprint8-js", () => {
+    appendScript("sprint8-alpha6-fix.js?v=0.9.3-alpha6", "sprint8-alpha6-js");
+  });
 }
 
 const releaseStartButton = document.getElementById("startWalkBtn");
