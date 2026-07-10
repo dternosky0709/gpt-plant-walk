@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GPT Plant Walk</title>
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="styles.css?v=0.8.0-alpha1" />
-  <link rel="stylesheet" href="settings.css?v=0.8.0-alpha1" />
+  <link rel="stylesheet" href="styles.css?v=0.8.1-alpha2" />
+  <link rel="stylesheet" href="settings.css?v=0.8.1-alpha2" />
   <meta name="theme-color" content="#173826" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Plant Walk" />
@@ -73,7 +73,6 @@
           <button id="printPdfBtn" class="secondary">Save Raw Plant Walk PDF</button>
           <button id="copyReportBtn">Copy AI Prompt</button>
         </div>
-
         <h2 class="no-print">ChatGPT-Ready AI Prompt</h2>
         <textarea id="reportOutput" class="no-print" readonly></textarea>
         <article id="professionalReport"></article>
@@ -96,19 +95,48 @@
           <input id="companyNameInput" type="text" placeholder="Example: Iron Rock" />
           <label for="plantNameInput">Plant Name</label>
           <input id="plantNameInput" type="text" placeholder="Example: Canton Plant" />
-          <label for="plantCodeInput">Plant Code</label>
-          <input id="plantCodeInput" type="text" placeholder="Example: IR" maxlength="12" />
+
+          <label for="companyLogoInput">Company Logo</label>
+          <input id="companyLogoInput" type="file" accept="image/png,image/jpeg,image/webp" />
+          <div id="logoPreviewCard" class="logo-preview-card hidden">
+            <img id="companyLogoPreview" alt="Company logo preview" />
+            <button id="removeLogoBtn" type="button" class="secondary compact-button">Remove Logo</button>
+          </div>
+          <p class="muted token-help">Optional. The logo is saved only on this device.</p>
         </div>
 
         <div class="settings-group">
           <h3>Work Orders</h3>
-          <label for="workOrderFormatInput">Work Order Number Format</label>
-          <input id="workOrderFormatInput" type="text" value="PW-{DATE}-{SEQ}" />
-          <p class="muted token-help">Available: {PLANT}, {DATE}, {YEAR}, {MONTH}, {DAY}, {SEQ}</p>
+          <p class="muted section-intro">Choose a quick format or build your own.</p>
+
+          <div class="template-list">
+            <label class="template-option"><input type="radio" name="workOrderTemplate" value="WO-{DATE}-{SEQ}" /><span><strong>WO-20260709-001</strong><small>Full date and sequence</small></span></label>
+            <label class="template-option"><input type="radio" name="workOrderTemplate" value="WO-{YEAR}-{SEQ}" /><span><strong>WO-2026-001</strong><small>Year and sequence</small></span></label>
+            <label class="template-option"><input type="radio" name="workOrderTemplate" value="WO-{SEQ}" /><span><strong>WO-001</strong><small>Simple sequence</small></span></label>
+            <label class="template-option"><input type="radio" name="workOrderTemplate" value="{DATE}-{SEQ}" /><span><strong>20260709-001</strong><small>Date and sequence</small></span></label>
+            <label class="template-option"><input type="radio" name="workOrderTemplate" value="custom" /><span><strong>Custom</strong><small>Build your own format</small></span></label>
+          </div>
+
+          <div id="customFormatBuilder" class="custom-builder hidden">
+            <label for="workOrderFormatInput">Custom Format</label>
+            <input id="workOrderFormatInput" type="text" value="WO-{DATE}-{SEQ}" autocomplete="off" />
+            <div class="token-buttons" aria-label="Insert work order format item">
+              <button type="button" class="token-button" data-token="WO">WO</button>
+              <button type="button" class="token-button" data-token="{COMPANY}">Company</button>
+              <button type="button" class="token-button" data-token="{DATE}">Date</button>
+              <button type="button" class="token-button" data-token="{YEAR}">Year</button>
+              <button type="button" class="token-button" data-token="{MONTH}">Month</button>
+              <button type="button" class="token-button" data-token="{DAY}">Day</button>
+              <button type="button" class="token-button" data-token="{SEQ}">Sequence</button>
+              <button type="button" class="token-button" data-token="-">Dash</button>
+              <button type="button" class="token-button" data-token="/">Slash</button>
+              <button type="button" class="token-button danger-token" data-action="clear">Clear</button>
+            </div>
+          </div>
 
           <div class="settings-grid">
             <div>
-              <label for="sequenceStartInput">Next Sequence</label>
+              <label for="sequenceStartInput">Starting Work Order Number</label>
               <input id="sequenceStartInput" type="number" min="1" value="1" />
             </div>
             <div>
@@ -124,25 +152,19 @@
 
           <div class="preview-card">
             <span>Preview</span>
-            <strong id="workOrderPreview">PW-20260709-001</strong>
+            <strong id="workOrderPreview">WO-20260709-001</strong>
           </div>
         </div>
 
         <div class="settings-group">
           <h3>Appearance</h3>
-          <label class="choice-row">
-            <input type="radio" name="theme" value="light" checked />
-            <span><strong>Light Mode</strong><small>Bright background for normal use</small></span>
-          </label>
-          <label class="choice-row">
-            <input type="radio" name="theme" value="dark" />
-            <span><strong>Dark Mode</strong><small>Reduced glare in low-light areas</small></span>
-          </label>
+          <label class="choice-row"><input type="radio" name="theme" value="light" checked /><span><strong>Light Mode</strong><small>Bright background for normal use</small></span></label>
+          <label class="choice-row"><input type="radio" name="theme" value="dark" /><span><strong>Dark Mode</strong><small>Reduced glare in low-light areas</small></span></label>
         </div>
 
         <div class="settings-group">
           <h3>About</h3>
-          <div class="about-row"><span>App Version</span><strong>v0.8.0-alpha1</strong></div>
+          <div class="about-row"><span>App Version</span><strong>v0.8.1-alpha2</strong></div>
           <div class="about-row"><span>Work Order Standard</span><strong>v1.0</strong></div>
           <div class="about-row"><span>Storage</span><strong>Local / IndexedDB</strong></div>
         </div>
@@ -153,12 +175,10 @@
     </section>
   </main>
 
-  <footer class="no-print">
-    <p id="appVersionText">GPT Plant Walk v0.8.0-alpha1</p>
-  </footer>
+  <footer class="no-print"><p>GPT Plant Walk v0.8.1-alpha2</p></footer>
 
-  <script src="storage.js?v=0.8.0-alpha1"></script>
-  <script src="app.js?v=0.8.0-alpha1"></script>
-  <script src="settings.js?v=0.8.0-alpha1"></script>
+  <script src="storage.js?v=0.8.1-alpha2"></script>
+  <script src="app.js?v=0.8.1-alpha2"></script>
+  <script src="settings.js?v=0.8.1-alpha2"></script>
 </body>
 </html>
