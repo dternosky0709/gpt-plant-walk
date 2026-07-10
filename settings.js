@@ -1,4 +1,5 @@
 const SETTINGS_KEY = "gptPlantWalkSettings";
+const SETTINGS_APP_VERSION = "v0.8.0-alpha1";
 
 const defaultSettings = {
   companyName: "",
@@ -23,6 +24,9 @@ const sequenceStartInput = document.getElementById("sequenceStartInput");
 const sequenceDigitsInput = document.getElementById("sequenceDigitsInput");
 const workOrderPreview = document.getElementById("workOrderPreview");
 const settingsSavedMessage = document.getElementById("settingsSavedMessage");
+const visibleAppVersion = document.getElementById("appVersionText");
+
+if (visibleAppVersion) visibleAppVersion.textContent = `GPT Plant Walk ${SETTINGS_APP_VERSION}`;
 
 let appSettings = loadSettings();
 applySettings(appSettings);
