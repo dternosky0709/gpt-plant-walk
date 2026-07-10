@@ -1,4 +1,4 @@
-const CACHE_NAME = "gpt-plant-walk-v0-9-8-alpha11b";
+const CACHE_NAME = "gpt-plant-walk-v0-9-9-alpha12";
 
 const FILES_TO_CACHE = [
   "./",
@@ -17,6 +17,7 @@ const FILES_TO_CACHE = [
   "./sprint8.js",
   "./sprint8-alpha7-fix.js",
   "./sprint9.js",
+  "./sprint9-lockdown.js",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png"
