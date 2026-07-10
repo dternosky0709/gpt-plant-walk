@@ -36,13 +36,14 @@ function appendScript(src, key, onload) {
 }
 
 function loadReleaseAssets() {
-  appendStylesheet("sprint8.css?v=0.9.8-alpha11", "sprint8-css");
-  appendStylesheet("sprint8-alpha6-fix.css?v=0.9.8-alpha11", "sprint8-alpha6-css");
-  appendStylesheet("sprint8-alpha7-fix.css?v=0.9.8-alpha11", "sprint8-alpha10-css");
+  const build = "0.9.8-alpha11b";
+  appendStylesheet("sprint8.css?v=" + build, "sprint8-css");
+  appendStylesheet("sprint8-alpha6-fix.css?v=" + build, "sprint8-alpha6-css");
+  appendStylesheet("sprint8-alpha7-fix.css?v=" + build, "sprint8-alpha10-css");
 
-  appendScript("sprint8.js?v=0.9.8-alpha11", "sprint8-js", function () {
-    appendScript("sprint8-alpha7-fix.js?v=0.9.8-alpha11", "sprint8-alpha10-js", function () {
-      appendScript("sprint9.js?v=0.9.8-alpha11", "sprint9-js");
+  appendScript("sprint8.js?v=" + build, "sprint8-js", function () {
+    appendScript("sprint8-alpha7-fix.js?v=" + build, "sprint8-alpha10-js", function () {
+      appendScript("sprint9.js?v=" + build, "sprint9-js");
     });
   });
 }
