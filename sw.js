@@ -1,4 +1,4 @@
-const CACHE_NAME = "gpt-plant-walk-v0-8-1-alpha2";
+const CACHE_NAME = "gpt-plant-walk-v0-8-2-rc1";
 
 const FILES_TO_CACHE = [
   "./",
@@ -31,6 +31,12 @@ self.addEventListener("fetch", event => {
   if (event.request.method !== "GET") return;
 
   event.respondWith(
-    caches.match(event.request).then(response => response || fetch(event.request))
+    fetch(event.request)
+      .then(response => {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
