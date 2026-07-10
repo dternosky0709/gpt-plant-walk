@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GPT Plant Walk</title>
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="styles.css?v=0.7.3-alpha4" />
+  <link rel="stylesheet" href="styles.css?v=0.7.4-sprint6-final" />
   <meta name="theme-color" content="#173826" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Plant Walk" />
@@ -38,10 +38,11 @@
       </div>
 
       <label for="issueText">Observation</label>
-      <textarea id="issueText" placeholder="Example: Kiln car track 3 limit switch damaged"></textarea>
+      <textarea id="issueText" placeholder="Describe what you see. Example: Transfer car main drive is noisy; inspect bearings and lubrication."></textarea>
+      <p class="muted">Tap the observation box and use your phone keyboard microphone for voice dictation.</p>
 
       <div class="button-grid">
-        <button id="voiceBtn" class="secondary">Start Voice Dictation</button>
+        <button id="voiceBtn" class="secondary" hidden aria-hidden="true" tabindex="-1">Voice Dictation</button>
         <button id="clearDraftBtn" class="danger">Clear Draft</button>
       </div>
 
@@ -63,9 +64,9 @@
 
     <section id="reportSection" class="card hidden">
       <div class="report-actions no-print">
-        <p class="muted"><strong>Current AI workflow:</strong> 1) Copy AI Prompt, 2) Save Raw Plant Walk PDF, 3) paste the prompt into ChatGPT and attach the PDF.</p>
-        <button id="copyReportBtn">Copy AI Prompt</button>
+        <p class="muted"><strong>Current AI workflow:</strong> 1) Save the Raw Plant Walk PDF, 2) Copy the AI Prompt, 3) paste the prompt into ChatGPT and attach the PDF.</p>
         <button id="printPdfBtn" class="secondary">Save Raw Plant Walk PDF</button>
+        <button id="copyReportBtn">Copy AI Prompt</button>
       </div>
 
       <h2 class="no-print">ChatGPT-Ready AI Prompt</h2>
@@ -76,10 +77,10 @@
   </main>
 
   <footer class="no-print">
-    <p id="appVersionText">GPT Plant Walk</p>
+    <p>GPT Plant Walk v0.7.4 — Sprint 6 Final</p>
   </footer>
 
-  <script src="storage.js?v=0.7.3-alpha4"></script>
-  <script src="app.js?v=0.7.3-alpha4"></script>
+  <script src="storage.js?v=0.7.4-sprint6-final"></script>
+  <script src="app.js?v=0.7.4-sprint6-final"></script>
 </body>
 </html>
