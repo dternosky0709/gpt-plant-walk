@@ -1,4 +1,4 @@
-const RELEASE_VERSION = "v0.9.3-alpha6";
+const RELEASE_VERSION = "v0.9.4-alpha7";
 
 function applyReleaseVersionToActiveWalk() {
   try {
@@ -38,10 +38,14 @@ function appendScript(src, key, onload) {
 }
 
 function loadSprint8Assets() {
-  appendStylesheet("sprint8.css?v=0.9.3-alpha6b", "sprint8-css");
-  appendStylesheet("sprint8-alpha6-fix.css?v=0.9.3-alpha6b", "sprint8-alpha6-css");
-  appendScript("sprint8.js?v=0.9.3-alpha6b", "sprint8-js", () => {
-    appendScript("sprint8-alpha6-fix.js?v=0.9.3-alpha6b", "sprint8-alpha6-js");
+  appendStylesheet("sprint8.css?v=0.9.4-alpha7", "sprint8-css");
+  appendStylesheet("sprint8-alpha6-fix.css?v=0.9.4-alpha7", "sprint8-alpha6-css");
+  appendStylesheet("sprint8-alpha7-fix.css?v=0.9.4-alpha7", "sprint8-alpha7-css");
+
+  appendScript("sprint8.js?v=0.9.4-alpha7", "sprint8-js", () => {
+    appendScript("sprint8-alpha6-fix.js?v=0.9.4-alpha7", "sprint8-alpha6-js", () => {
+      appendScript("sprint8-alpha7-fix.js?v=0.9.4-alpha7", "sprint8-alpha7-js");
+    });
   });
 }
 
