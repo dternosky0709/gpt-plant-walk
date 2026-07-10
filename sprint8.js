@@ -1,4 +1,4 @@
-const SPRINT8_VERSION = "v0.9.1-alpha4";
+const SPRINT8_VERSION = "v0.9.2-alpha5";
 
 function getSprint8Settings() {
   return window.gptPlantWalkSettings || {
@@ -98,13 +98,19 @@ function buildSprint8Brand(settings) {
   return `<div class="wo-brand">${logo}<div>${company}${plant}</div></div>`;
 }
 
+function buildInlineIssuePhoto(issue) {
+  if (!issue.photos || issue.photos.length === 0) return "";
+  return `<div class="wo-inline-photo"><img src="${issue.photos[0]}" alt="Issue photo" /></div>`;
+}
+
 function buildSprint8WorkOrderPage(walk, issue, issueIndex) {
   const settings = getSprint8Settings();
   const number = getSprint8WorkOrderNumber(walk, issueIndex);
   const analysis = analyzeSprint8Observation(issue.observation);
+  const photo = buildInlineIssuePhoto(issue);
 
   return `
-    <section class="work-order-page">
+    <section class="work-order-page ${photo ? "has-inline-photo" : ""}">
       <div class="wo-title-row">
         ${buildSprint8Brand(settings)}
         <div class="wo-document-title"><span>MAINTENANCE WORK ORDER</span><h2>${escapeHtml(number)}</h2></div>
@@ -118,16 +124,19 @@ function buildSprint8WorkOrderPage(walk, issue, issueIndex) {
         <div class="wo-header-wide"><span>LIKELY EQUIPMENT / AREA</span><strong>${escapeHtml(analysis.equipment)}</strong></div>
       </div>
 
-      <div class="wo-section wo-observation"><h3>Initial Observation</h3><p>${escapeHtml(analysis.raw)}</p></div>
+      <div class="wo-observation-row ${photo ? "with-photo" : ""}">
+        <div class="wo-section wo-observation"><h3>Initial Observation</h3><p>${escapeHtml(analysis.raw)}</p></div>
+        ${photo}
+      </div>
 
       <div class="wo-section wo-actions">
         <h3>Suggested Corrective Actions</h3>
-        ${analysis.actions.map(action => `<div class="wo-check-line">☐ ${escapeHtml(action)}</div>`).join("")}
+        ${analysis.actions.slice(0, 2).map(action => `<div class="wo-check-line">☐ ${escapeHtml(action)}</div>`).join("")}
       </div>
 
       <div class="wo-section wo-notes">
         <h3>Technician — Work Performed / Findings</h3>
-        <div class="wo-writing-lines"><i></i><i></i><i></i><i></i></div>
+        <div class="wo-writing-lines"><i></i><i></i><i></i></div>
       </div>
 
       <div class="wo-section wo-parts">
@@ -150,29 +159,6 @@ function buildSprint8WorkOrderPage(walk, issue, issueIndex) {
     </section>`;
 }
 
-function buildSprint8PhotoAttachmentPage(walk, issue, issueIndex) {
-  if (!issue.photos || issue.photos.length === 0) return "";
-  const settings = getSprint8Settings();
-  const number = getSprint8WorkOrderNumber(walk, issueIndex);
-  const observation = String(issue.observation || "Photo-only issue").trim();
-
-  return `
-    <section class="photo-attachment-page">
-      <div class="wo-title-row">
-        ${buildSprint8Brand(settings)}
-        <div class="wo-document-title"><span>WORK ORDER PHOTO ATTACHMENT</span><h2>${escapeHtml(number)}</h2></div>
-      </div>
-      <div class="photo-attachment-meta">
-        <span>ORIGINAL OBSERVATION</span>
-        <strong>${escapeHtml(observation)}</strong>
-      </div>
-      <div class="photo-attachment-frame">
-        <img class="photo-attachment-image" src="${issue.photos[0]}" alt="Work order photo attachment" />
-      </div>
-      <p class="wo-footer">Photo Attachment • ${escapeHtml(number)}</p>
-    </section>`;
-}
-
 const sprint8OriginalProfessionalReport = window.buildProfessionalReportHtml;
 window.buildProfessionalReportHtml = function buildProfessionalReportHtmlSprint8(walk) {
   const base = typeof sprint8OriginalProfessionalReport === "function" ? sprint8OriginalProfessionalReport(walk) : "";
@@ -192,10 +178,8 @@ window.buildProfessionalReportHtml = function buildProfessionalReportHtmlSprint8
     }
   });
 
-  const pages = walk.issues.map((issue, index) =>
-    `${buildSprint8WorkOrderPage(walk, issue, index)}${buildSprint8PhotoAttachmentPage(walk, issue, index)}`
-  ).join("");
-  return `${host.innerHTML}<section class="work-order-packet-heading"><h2>Printable Work Orders</h2><p>Each issue includes a work order page. Issues with a photo include a separate photo attachment page.</p></section>${pages}`;
+  const pages = walk.issues.map((issue, index) => buildSprint8WorkOrderPage(walk, issue, index)).join("");
+  return `${host.innerHTML}<section class="work-order-packet-heading"><h2>Printable Work Orders</h2><p>One work order page is included for each issue.</p></section>${pages}`;
 };
 
 const sprint8OriginalPrompt = window.buildChatGptReport;
@@ -210,7 +194,7 @@ window.buildChatGptReport = function buildChatGptReportSprint8(walk) {
 
 function applySprint8Version() {
   const footer = document.getElementById("appVersionText");
-  if (footer) footer.textContent = `GPT Plant Walk ${SPRINT8_VERSION} — Sprint 8 Alpha 4`;
+  if (footer) footer.textContent = `GPT Plant Walk ${SPRINT8_VERSION} — Sprint 8 Alpha 5`;
   try {
     if (typeof activeWalk !== "undefined" && activeWalk) activeWalk.version = SPRINT8_VERSION;
   } catch (error) {
