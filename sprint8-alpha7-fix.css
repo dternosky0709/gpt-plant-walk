@@ -33,44 +33,27 @@
     break-before: page !important;
   }
 
-  .work-order-packet-complete {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    min-height: 9.4in !important;
-    width: 100% !important;
+  .work-order-print-terminator {
+    display: block !important;
     page-break-before: always !important;
     break-before: page !important;
-    page-break-inside: avoid !important;
-    break-inside: avoid-page !important;
-  }
-
-  .packet-complete-card {
-    width: 70% !important;
-    padding: .45in !important;
-    border: 2px solid #173826 !important;
-    border-radius: 14px !important;
-    text-align: center !important;
-    background: #fff !important;
-  }
-
-  .packet-complete-kicker {
-    margin: 0 0 8px !important;
-    color: #667085 !important;
-    font-size: 9px !important;
-    font-weight: 800 !important;
-    letter-spacing: .14em !important;
-  }
-
-  .packet-complete-card h2 {
-    margin: 0 0 8px !important;
-    color: #173826 !important;
-    font-size: 22px !important;
-  }
-
-  .packet-complete-card p:last-child {
+    width: 1px !important;
+    height: 1px !important;
+    min-height: 1px !important;
+    max-height: 1px !important;
     margin: 0 !important;
-    font-size: 12px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+    color: transparent !important;
+    background: transparent !important;
+    border: 0 !important;
+    font-size: 1px !important;
+    line-height: 1px !important;
+  }
+
+  .work-order-packet-complete {
+    display: none !important;
   }
 
   .wo-header-card {
@@ -102,7 +85,8 @@
 }
 
 @media screen {
+  .work-order-print-terminator,
   .work-order-packet-complete {
-    display: none;
+    display: none !important;
   }
 }
