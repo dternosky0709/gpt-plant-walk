@@ -1,4 +1,4 @@
-const RELEASE_VERSION = "v0.9.1-alpha2";
+const RELEASE_VERSION = "v0.9.1-alpha3";
 
 function applyReleaseVersionToActiveWalk() {
   try {
@@ -19,7 +19,7 @@ function loadSprint8Assets() {
   if (!document.querySelector('link[data-sprint8="true"]')) {
     const stylesheet = document.createElement("link");
     stylesheet.rel = "stylesheet";
-    stylesheet.href = "sprint8.css?v=0.9.1-alpha2";
+    stylesheet.href = "sprint8.css?v=0.9.1-alpha3";
     stylesheet.dataset.sprint8 = "true";
     document.head.appendChild(stylesheet);
   }
