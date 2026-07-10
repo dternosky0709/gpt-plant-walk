@@ -1,6 +1,6 @@
 (() => {
-  const VERSION = "v0.9.6-alpha9";
-  const FOOTER_TEXT = `GPT Plant Walk ${VERSION} — Sprint 8 Alpha 9`;
+  const VERSION = "v0.9.7-alpha10";
+  const FOOTER_TEXT = `GPT Plant Walk ${VERSION} — Sprint 8 Alpha 10`;
 
   function setVersion() {
     const footer = document.getElementById("appVersionText");
@@ -17,7 +17,7 @@
     try {
       if (typeof activeWalk !== "undefined" && activeWalk) activeWalk.version = VERSION;
     } catch (error) {
-      console.error("Could not apply Sprint 8 Alpha 9 version.", error);
+      console.error("Could not apply Sprint 8 Alpha 10 version.", error);
     }
   }
 
@@ -29,24 +29,13 @@
     });
   }
 
-  function buildPacketCompletePage(issueCount) {
-    return `
-      <section class="work-order-packet-complete" aria-label="Work order packet complete">
-        <div class="packet-complete-card">
-          <p class="packet-complete-kicker">GPT PLANT WALK</p>
-          <h2>Work Order Packet Complete</h2>
-          <p>${issueCount} work order${issueCount === 1 ? "" : "s"} generated.</p>
-        </div>
-      </section>`;
-  }
-
   function installFinalPacketBuilder() {
     const currentBuilder = window.buildProfessionalReportHtml;
     const pageBuilder = window.buildSprint8WorkOrderPage;
     if (typeof currentBuilder !== "function" || typeof pageBuilder !== "function") return false;
-    if (currentBuilder.__alpha9Wrapped) return true;
+    if (currentBuilder.__alpha10Wrapped) return true;
 
-    function alpha9Builder(walk) {
+    function alpha10Builder(walk) {
       const host = document.createElement("div");
       host.innerHTML = currentBuilder(walk);
       updatePrintedVersion(host);
@@ -60,9 +49,12 @@
         host.insertAdjacentHTML("beforeend", pageBuilder(walk, issue, index));
       });
 
-      // Mobile Safari has repeatedly omitted the final printable node.
-      // This real trailing page protects the final work order from being dropped.
-      host.insertAdjacentHTML("beforeend", buildPacketCompletePage(issues.length));
+      // Safari can omit the last printable node. This invisible forced break protects
+      // the final work order without adding a visible completion/test page.
+      host.insertAdjacentHTML(
+        "beforeend",
+        '<div class="work-order-print-terminator" aria-hidden="true">.</div>'
+      );
 
       const generated = host.querySelectorAll(".work-order-page").length;
       if (generated !== issues.length) {
@@ -72,8 +64,8 @@
       return host.innerHTML;
     }
 
-    alpha9Builder.__alpha9Wrapped = true;
-    window.buildProfessionalReportHtml = alpha9Builder;
+    alpha10Builder.__alpha10Wrapped = true;
+    window.buildProfessionalReportHtml = alpha10Builder;
     return true;
   }
 
