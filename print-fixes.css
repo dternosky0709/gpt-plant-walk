@@ -1,0 +1,47 @@
+@media print {
+  /* Keep the attachment header, observation, image, and footer together. */
+  .photo-attachment-page {
+    width: 100%;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    padding: .18in !important;
+    page-break-before: always;
+    break-before: page;
+    page-break-inside: avoid !important;
+    break-inside: avoid-page !important;
+    overflow: hidden !important;
+  }
+
+  /* Use a moderate image area so the photo is useful without becoming an ink-heavy full-page print. */
+  .photo-attachment-frame {
+    width: 6.2in;
+    height: 4.75in !important;
+    max-width: 100%;
+    margin: .16in auto 0;
+    padding: .12in;
+    page-break-inside: avoid !important;
+    break-inside: avoid-page !important;
+  }
+
+  .photo-attachment-image {
+    max-width: 100%;
+    max-height: 4.45in !important;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+  }
+
+  .photo-attachment-page .wo-title-row {
+    margin-bottom: .08in;
+    padding-bottom: .06in;
+  }
+
+  .photo-attachment-meta {
+    padding: .08in .1in;
+  }
+
+  .photo-attachment-page .wo-footer {
+    margin-top: .08in;
+  }
+}

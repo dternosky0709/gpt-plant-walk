@@ -1,7 +1,10 @@
-const RELEASE_VERSION = "v0.9.1-alpha4";
+const RELEASE_VERSION = "v0.9.1-alpha5";
 
 function applyReleaseVersionToActiveWalk() {
   try {
+    const footer = document.getElementById("appVersionText");
+    if (footer) footer.textContent = `GPT Plant Walk ${RELEASE_VERSION} — Sprint 8 Alpha 5`;
+
     if (typeof activeWalk !== "undefined" && activeWalk && activeWalk.version !== RELEASE_VERSION) {
       activeWalk.version = RELEASE_VERSION;
       if (typeof persistWalks === "function") {
@@ -19,14 +22,22 @@ function loadSprint8Assets() {
   if (!document.querySelector('link[data-sprint8="true"]')) {
     const stylesheet = document.createElement("link");
     stylesheet.rel = "stylesheet";
-    stylesheet.href = "sprint8.css?v=0.9.1-alpha4";
+    stylesheet.href = "sprint8.css?v=0.9.1-alpha5";
     stylesheet.dataset.sprint8 = "true";
+    document.head.appendChild(stylesheet);
+  }
+
+  if (!document.querySelector('link[data-print-fixes="true"]')) {
+    const stylesheet = document.createElement("link");
+    stylesheet.rel = "stylesheet";
+    stylesheet.href = "print-fixes.css?v=0.9.1-alpha5";
+    stylesheet.dataset.printFixes = "true";
     document.head.appendChild(stylesheet);
   }
 
   if (!document.querySelector('script[data-sprint8="true"]')) {
     const script = document.createElement("script");
-    script.src = "sprint8.js?v=0.9.1-alpha4";
+    script.src = "sprint8.js?v=0.9.1-alpha5";
     script.dataset.sprint8 = "true";
     script.defer = true;
     document.body.appendChild(script);
