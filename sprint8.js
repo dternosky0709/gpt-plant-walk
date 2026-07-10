@@ -1,4 +1,4 @@
-const SPRINT8_VERSION = "v0.9.2-alpha5";
+const SPRINT8_VERSION = "v0.9.4-alpha7";
 
 function getSprint8Settings() {
   return window.gptPlantWalkSettings || {
@@ -159,6 +159,8 @@ function buildSprint8WorkOrderPage(walk, issue, issueIndex) {
     </section>`;
 }
 
+window.buildSprint8WorkOrderPage = buildSprint8WorkOrderPage;
+
 const sprint8OriginalProfessionalReport = window.buildProfessionalReportHtml;
 window.buildProfessionalReportHtml = function buildProfessionalReportHtmlSprint8(walk) {
   const base = typeof sprint8OriginalProfessionalReport === "function" ? sprint8OriginalProfessionalReport(walk) : "";
@@ -179,7 +181,7 @@ window.buildProfessionalReportHtml = function buildProfessionalReportHtmlSprint8
   });
 
   const pages = walk.issues.map((issue, index) => buildSprint8WorkOrderPage(walk, issue, index)).join("");
-  return `${host.innerHTML}<section class="work-order-packet-heading"><h2>Printable Work Orders</h2><p>One work order page is included for each issue.</p></section>${pages}`;
+  return `${host.innerHTML}${pages}`;
 };
 
 const sprint8OriginalPrompt = window.buildChatGptReport;
@@ -193,8 +195,6 @@ window.buildChatGptReport = function buildChatGptReportSprint8(walk) {
 };
 
 function applySprint8Version() {
-  const footer = document.getElementById("appVersionText");
-  if (footer) footer.textContent = `GPT Plant Walk ${SPRINT8_VERSION} — Sprint 8 Alpha 5`;
   try {
     if (typeof activeWalk !== "undefined" && activeWalk) activeWalk.version = SPRINT8_VERSION;
   } catch (error) {
