@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GPT Plant Walk</title>
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="styles.css?v=0.8.1-alpha2" />
-  <link rel="stylesheet" href="settings.css?v=0.8.1-alpha2" />
+  <link rel="stylesheet" href="styles.css?v=0.8.2-rc1" />
+  <link rel="stylesheet" href="settings.css?v=0.8.2-rc1" />
   <meta name="theme-color" content="#173826" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Plant Walk" />
@@ -95,7 +95,6 @@
           <input id="companyNameInput" type="text" placeholder="Example: Iron Rock" />
           <label for="plantNameInput">Plant Name</label>
           <input id="plantNameInput" type="text" placeholder="Example: Canton Plant" />
-
           <label for="companyLogoInput">Company Logo</label>
           <input id="companyLogoInput" type="file" accept="image/png,image/jpeg,image/webp" />
           <div id="logoPreviewCard" class="logo-preview-card hidden">
@@ -108,7 +107,6 @@
         <div class="settings-group">
           <h3>Work Orders</h3>
           <p class="muted section-intro">Choose a quick format or build your own.</p>
-
           <div class="template-list">
             <label class="template-option"><input type="radio" name="workOrderTemplate" value="WO-{DATE}-{SEQ}" /><span><strong>WO-20260709-001</strong><small>Full date and sequence</small></span></label>
             <label class="template-option"><input type="radio" name="workOrderTemplate" value="WO-{YEAR}-{SEQ}" /><span><strong>WO-2026-001</strong><small>Year and sequence</small></span></label>
@@ -164,7 +162,7 @@
 
         <div class="settings-group">
           <h3>About</h3>
-          <div class="about-row"><span>App Version</span><strong>v0.8.1-alpha2</strong></div>
+          <div class="about-row"><span>App Version</span><strong>v0.8.2-rc1</strong></div>
           <div class="about-row"><span>Work Order Standard</span><strong>v1.0</strong></div>
           <div class="about-row"><span>Storage</span><strong>Local / IndexedDB</strong></div>
         </div>
@@ -175,10 +173,10 @@
     </section>
   </main>
 
-  <footer class="no-print"><p>GPT Plant Walk v0.8.1-alpha2</p></footer>
+  <footer class="no-print"><p>GPT Plant Walk v0.8.2-rc1 — Sprint 7</p></footer>
 
-  <script src="storage.js?v=0.8.1-alpha2"></script>
-  <script src="app.js?v=0.8.1-alpha2"></script>
-  <script src="settings.js?v=0.8.1-alpha2"></script>
+  <script src="storage.js?v=0.8.2-rc1"></script>
+  <script src="app.js?v=0.8.2-rc1"></script>
+  <script src="settings.js?v=0.8.2-rc1"></script>
 </body>
 </html>
