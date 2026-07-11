@@ -70,9 +70,11 @@
 
       <section id="reportSection" class="card hidden">
         <div class="report-actions no-print">
-          <p class="muted"><strong>Current AI workflow:</strong> 1) Save the Raw Plant Walk PDF, 2) Copy the AI Prompt, 3) paste the prompt into ChatGPT and attach the PDF.</p>
+          <p class="muted"><strong>Packet workflow:</strong> Generate the PDFBolt maintenance packet, or keep using the raw PDF and ChatGPT prompt during staged rollout.</p>
+          <button id="generatePacketBtn">Generate Maintenance Packet</button>
           <button id="printPdfBtn" class="secondary">Save Raw Plant Walk PDF</button>
-          <button id="copyReportBtn">Copy AI Prompt</button>
+          <button id="copyReportBtn" class="secondary">Copy AI Prompt</button>
+          <p id="packetStatus" class="muted hidden" role="status" aria-live="polite"></p>
         </div>
         <h2 class="no-print">ChatGPT-Ready AI Prompt</h2>
         <textarea id="reportOutput" class="no-print" readonly></textarea>
@@ -180,6 +182,7 @@
   <script src="app.js?v=0.9.4-alpha7"></script>
   <script src="settings.js?v=0.9.4-alpha7"></script>
   <script src="report-branding.js?v=0.9.4-alpha7"></script>
+  <script src="pdfbolt.js?v=0.9.5-alpha1"></script>
   <script src="release.js?v=0.9.4-alpha7"></script>
 </body>
 </html>
