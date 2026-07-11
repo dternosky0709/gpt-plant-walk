@@ -1,4 +1,4 @@
-const CACHE_NAME = "gpt-plant-walk-v0-9-12-alpha15";
+const CACHE_NAME = "gpt-plant-walk-v0-9-5-alpha1-pdfbolt";
 
 const FILES_TO_CACHE = [
   "./",
@@ -13,6 +13,7 @@ const FILES_TO_CACHE = [
   "./app.js",
   "./settings.js",
   "./report-branding.js",
+  "./pdfbolt.js",
   "./release.js",
   "./sprint8.js",
   "./sprint8-alpha7-fix.js",
