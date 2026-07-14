@@ -18,6 +18,13 @@ if (generatePacketBtn) {
   generatePacketBtn.addEventListener("click", generateMaintenancePacket);
 }
 
+if (typeof window.addEventListener === "function") {
+  window.addEventListener("plantwalk:return-to-start", () => {
+    currentPacketWalkId = null;
+    setPacketStatus("");
+  });
+}
+
 function readPacketSettings() {
   try {
     const saved = JSON.parse(localStorage.getItem("gptPlantWalkSettings"));

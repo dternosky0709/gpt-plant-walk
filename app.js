@@ -11,6 +11,7 @@ let selectedPhotos = [];
 let isProcessingPhotos = false;
 let photoConversionError = false;
 let deletingIssueId = null;
+let reportedWalkId = null;
 
 const $ = id => document.getElementById(id);
 const startWalkBtn = $("startWalkBtn");
@@ -31,6 +32,7 @@ const walkList = $("walkList");
 const reportOutput = $("reportOutput");
 const copyReportBtn = $("copyReportBtn");
 const printPdfBtn = $("printPdfBtn");
+const backToStartBtn = $("backToStartBtn");
 const voiceBtn = $("voiceBtn");
 const professionalReport = $("professionalReport");
 const appVersionText = $("appVersionText");
@@ -41,6 +43,7 @@ saveIssueBtn.addEventListener("click", saveIssue);
 finishWalkBtn.addEventListener("click", finishWalk);
 copyReportBtn.addEventListener("click", copyReport);
 printPdfBtn.addEventListener("click", () => window.print());
+backToStartBtn.addEventListener("click", () => returnToStart());
 voiceBtn.addEventListener("click", toggleVoiceDictation);
 clearDraftBtn.addEventListener("click", clearDraft);
 issueText.addEventListener("input", saveDraft);
@@ -50,6 +53,10 @@ if (appVersionText) appVersionText.textContent = `GPT Plant Walk ${APP_VERSION}`
 updateSaveIssueButtonState();
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
 initializeApp();
+window.addEventListener("popstate", event => {
+  if (event.state && event.state.plantWalkView === "report") return;
+  if (!reportSection.classList.contains("hidden")) returnToStart({ updateHistory: false });
+});
 
 async function initializeApp() {
   try {
@@ -68,6 +75,7 @@ async function initializeApp() {
   activeWalk = activeWalkId ? walks.find(walk => walk.id === activeWalkId && walk.status !== "completed") || null : null;
   await restoreInterruptedWalk();
   renderIssues();
+  if (!history.state || !history.state.plantWalkView) history.replaceState({ plantWalkView: "start" }, "");
 }
 
 async function loadWalks() {
@@ -374,10 +382,59 @@ function finishWalk() {
 function generateReport(walkId) {
   const walk = walks.find(item => item.id === walkId);
   if (!walk) return;
+  reportedWalkId = walk.id;
   reportOutput.value = buildChatGptReport(walk);
   professionalReport.innerHTML = buildProfessionalReportHtml(walk);
   reportSection.classList.remove("hidden");
   previousWalksSection.classList.add("hidden");
+  if (!history.state || history.state.plantWalkView !== "report" || history.state.walkId !== walk.id) {
+    history.pushState({ plantWalkView: "report", walkId: walk.id }, "");
+  }
+}
+
+async function returnToStart({ updateHistory = true } = {}) {
+  if (!window.walkReset) return;
+  backToStartBtn.disabled = true;
+  const walkId = reportedWalkId;
+
+  try {
+    await window.walkReset.resetCompletedWalk({
+      walkId,
+      clearDraft: async id => {
+        if (window.appStorage && typeof window.appStorage.clearDraft === "function") {
+          if (id) await window.appStorage.clearDraft(id);
+        } else {
+          localStorage.removeItem(DRAFT_KEY);
+        }
+      },
+      clearActiveWalk: () => {
+        activeWalk = null;
+        persistActiveWalkId();
+        reportedWalkId = null;
+      },
+      clearForm: () => {
+        if (recognition && isListening) recognition.stop();
+        isListening = false;
+        clearIssueEntryForm();
+        reportOutput.value = "";
+        professionalReport.innerHTML = "";
+        renderIssues();
+      },
+      showStart: () => {
+        activeWalkSection.classList.add("hidden");
+        previousWalksSection.classList.add("hidden");
+        reportSection.classList.add("hidden");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        window.dispatchEvent(new CustomEvent("plantwalk:return-to-start"));
+      }
+    });
+    if (updateHistory) history.replaceState({ plantWalkView: "start" }, "");
+  } catch (error) {
+    console.error("Could not return to the start screen.", error);
+    alert("Unable to return to the start screen. Your completed walk is still saved.");
+  } finally {
+    backToStartBtn.disabled = false;
+  }
 }
 
 function buildChatGptReport(walk) {
