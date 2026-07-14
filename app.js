@@ -10,6 +10,7 @@ let isListening = false;
 let selectedPhotos = [];
 let isProcessingPhotos = false;
 let photoConversionError = false;
+let deletingIssueId = null;
 
 const $ = id => document.getElementById(id);
 const startWalkBtn = $("startWalkBtn");
@@ -299,7 +300,10 @@ function renderIssues() {
   activeWalk.issues.forEach((issue, index) => {
     const div = document.createElement("div");
     div.className = "issue";
-    div.innerHTML = `<strong>Issue ${index + 1}</strong><p><strong>Time:</strong> ${escapeHtml(issue.time)}</p><p>${escapeHtml(issue.observation || "Photo-only issue")}</p><p><strong>Photos:</strong> ${issue.photos.length}</p><div class="photo-grid"></div>`;
+    div.innerHTML = `<div class="saved-issue-heading"><strong>Issue ${index + 1}</strong><button type="button" class="delete-issue-button" aria-label="Delete Issue ${index + 1}">Delete</button></div><p><strong>Time:</strong> ${escapeHtml(issue.time)}</p><p>${escapeHtml(issue.observation || "Photo-only issue")}</p><p><strong>Photos:</strong> ${issue.photos.length}</p><div class="photo-grid"></div>`;
+    const deleteButton = div.querySelector(".delete-issue-button");
+    deleteButton.disabled = deletingIssueId !== null;
+    deleteButton.addEventListener("click", () => deleteIssue(issue.id, index + 1));
     const grid = div.querySelector(".photo-grid");
     issue.photos.forEach(photo => {
       const img = document.createElement("img");
@@ -309,6 +313,31 @@ function renderIssues() {
     });
     issueList.appendChild(div);
   });
+}
+
+async function deleteIssue(issueId, issueNumber) {
+  if (!activeWalk || deletingIssueId !== null || !window.issueDeletion) return;
+  deletingIssueId = issueId;
+  renderIssues();
+
+  try {
+    const result = await window.issueDeletion.deleteSavedIssue({
+      walk: activeWalk,
+      issueId,
+      confirmDelete: () => confirm(`Delete Issue ${issueNumber}? This removes its saved observation and photo from this walk.`),
+      persist: persistWalks
+    });
+    if (result.status === "deleted") {
+      if (!previousWalksSection.classList.contains("hidden")) renderPreviousWalks();
+      if (!reportSection.classList.contains("hidden")) generateReport(activeWalk.id);
+    }
+  } catch (error) {
+    console.error("deleteIssue: error", error);
+    alert(`Unable to delete issue: ${error && error.message ? error.message : error}`);
+  } finally {
+    deletingIssueId = null;
+    renderIssues();
+  }
 }
 
 function renderPreviousWalks() {
