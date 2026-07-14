@@ -23,33 +23,55 @@
     }
   }
 
-  function validateAnalysis(analysis) {
-    if (!analysis || typeof analysis !== "object" || Array.isArray(analysis)) {
-      throw new TypeError("AI provider must return an analysis object.");
+  function validateAnalysis(analysis, normalizedWalk) {
+    if (!global.analysisContract || typeof global.analysisContract.validateAnalysisResult !== "function") {
+      throw new Error("The AI analysis response contract must be loaded before handling a provider response.");
     }
-    if (typeof analysis.walkId !== "string" || !analysis.walkId.trim()) {
-      throw new TypeError("AI analysis must include a walkId.");
-    }
-    if (!Array.isArray(analysis.findings)) {
-      throw new TypeError("AI analysis findings must be an array.");
-    }
+    return global.analysisContract.validateAnalysisResult(analysis, {
+      walkId: normalizedWalk.walkId,
+      issueIds: normalizedWalk.issues.map(issue => issue.issueId)
+    });
+  }
+
+  function timeoutError(timeoutMs) {
+    const error = new Error(`AI provider request timed out after ${timeoutMs} ms.`);
+    error.name = "AiTimeoutError";
+    error.code = "AI_TIMEOUT";
+    return error;
+  }
+
+  function runAttempt(provider, request, timeoutMs) {
+    if (!timeoutMs) return provider.analyzeWalk(request);
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(timeoutError(timeoutMs)), timeoutMs);
+      Promise.resolve().then(() => provider.analyzeWalk(request)).then(
+        value => { clearTimeout(timer); resolve(value); },
+        error => { clearTimeout(timer); reject(error); }
+      );
+    });
   }
 
   function createAiService(options) {
     const provider = options && options.provider;
     const promptOptions = options && options.promptOptions;
+    const runtimeConfig = options && options.runtimeConfig;
     validateProvider(provider);
 
     return Object.freeze({
       async analyzeWalk(walk) {
         const normalizedWalk = normalizeWalk(walk);
         const request = buildRequest(normalizedWalk, promptOptions);
-        const analysis = await provider.analyzeWalk(request);
-        validateAnalysis(analysis);
-        if (analysis.walkId !== normalizedWalk.walkId) {
-          throw new Error("AI analysis walkId must match the requested walk.");
+        const retryCount = runtimeConfig ? runtimeConfig.retryCount : 0;
+        let lastError;
+        for (let attempt = 0; attempt <= retryCount; attempt += 1) {
+          try {
+            const analysis = await runAttempt(provider, request, runtimeConfig && runtimeConfig.requestTimeoutMs);
+            return validateAnalysis(analysis, normalizedWalk);
+          } catch (error) {
+            lastError = error;
+          }
         }
-        return analysis;
+        throw lastError;
       }
     });
   }
@@ -61,16 +83,20 @@
       config: providerConfig,
       async analyzeWalk(request) {
         const userMessage = request.messages.find(message => message.role === "user");
-        const walk = JSON.parse(userMessage.content.slice(userMessage.content.indexOf("\n") + 1));
+        const normalizedWalk = JSON.parse(userMessage.content.slice(userMessage.content.indexOf("\n") + 1));
         return {
+          schemaVersion: "1.0",
           walkId: request.metadata.walkId,
           provider: MOCK_PROVIDER_NAME,
-          status: "mock",
+          model: providerConfig.model || "mock-v1",
+          status: "completed",
           summary: "Mock analysis only. No hosted AI request was made.",
-          findings: walk.issues.map((issue, index) => ({
+          issues: normalizedWalk.issues.map((issue) => ({
             issueId: issue.issueId,
-            sequence: issue.order,
-            observation: issue.observation
+            order: issue.order,
+            priority: issue.order === 1 ? "high" : "medium",
+            trade: "Field verification required",
+            recommendation: "Field verification required"
           }))
         };
       }
@@ -87,7 +113,8 @@
     }
     return createAiService({
       provider: createMockAiProvider(config),
-      promptOptions: { model: config.model, maxOutputTokens: config.maxOutputTokens }
+      promptOptions: { model: config.model, maxOutputTokens: config.maxOutputTokens },
+      runtimeConfig: config
     });
   }
 
