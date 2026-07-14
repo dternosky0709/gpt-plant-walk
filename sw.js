@@ -6,6 +6,7 @@ const FILES_TO_CACHE = [
   "./styles.css",
   "./settings.css",
   "./storage.js",
+  "./ai-service.js",
   "./app.js",
   "./issue-deletion.js",
   "./walk-reset.js",
