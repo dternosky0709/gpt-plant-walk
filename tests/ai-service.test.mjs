@@ -4,13 +4,16 @@ import vm from "node:vm";
 
 const source = fs.readFileSync(new URL("../ai-service.js", import.meta.url), "utf8");
 const contractSource = fs.readFileSync(new URL("../walk-contract.js", import.meta.url), "utf8");
+const promptSource = fs.readFileSync(new URL("../prompt-builder.js", import.meta.url), "utf8");
 const indexSource = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const serviceWorkerSource = fs.readFileSync(new URL("../sw.js", import.meta.url), "utf8");
 const context = { globalThis: {} };
 vm.runInNewContext(contractSource, context);
+vm.runInNewContext(promptSource, context);
 vm.runInNewContext(source, context);
 
-assert.match(indexSource, /<script src="walk-contract\.js\?v=1\.0"><\/script>\s*<script src="ai-service\.js\?v=1\.0"><\/script>/, "the contract must load before the AI service layer");
+assert.match(indexSource, /<script src="walk-contract\.js\?v=1\.0"><\/script>\s*<script src="prompt-builder\.js\?v=1\.0"><\/script>\s*<script src="ai-service\.js\?v=1\.0"><\/script>/, "the request contract must load before the AI service layer");
+assert.match(serviceWorkerSource, /"\.\/prompt-builder\.js"/, "the prompt builder must remain available offline");
 assert.match(serviceWorkerSource, /"\.\/ai-service\.js"/, "the AI service layer must remain available offline");
 
 const { createAiService, createMockAiProvider } = context.globalThis.aiService;
@@ -23,20 +26,21 @@ const walk = {
 };
 
 {
-  let receivedWalk = null;
+  let receivedRequest = null;
   const expected = { walkId: walk.id, findings: [], marker: "delegated" };
   const service = createAiService({
     provider: {
       async analyzeWalk(input) {
-        receivedWalk = input;
+        receivedRequest = input;
         return expected;
       }
     }
   });
 
   const result = await service.analyzeWalk(walk);
-  assert.notEqual(receivedWalk, walk, "the service must not delegate raw application data");
-  assert.equal(receivedWalk.walkId, walk.id, "the service must delegate the normalized contract");
+  assert.notEqual(receivedRequest, walk, "the service must not delegate raw application data");
+  assert.equal(receivedRequest.metadata.walkId, walk.id, "the service must delegate the provider-ready request");
+  assert.equal(receivedRequest.promptSchemaVersion, "1.0");
   assert.equal(result, expected, "the service must return the provider analysis");
 }
 

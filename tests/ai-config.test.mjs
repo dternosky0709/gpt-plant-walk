@@ -5,17 +5,19 @@ import vm from "node:vm";
 const configSource = fs.readFileSync(new URL("../ai-config.js", import.meta.url), "utf8");
 const serviceSource = fs.readFileSync(new URL("../ai-service.js", import.meta.url), "utf8");
 const contractSource = fs.readFileSync(new URL("../walk-contract.js", import.meta.url), "utf8");
+const promptSource = fs.readFileSync(new URL("../prompt-builder.js", import.meta.url), "utf8");
 const indexSource = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const serviceWorkerSource = fs.readFileSync(new URL("../sw.js", import.meta.url), "utf8");
 const context = { globalThis: {} };
 vm.runInNewContext(configSource, context);
 vm.runInNewContext(contractSource, context);
+vm.runInNewContext(promptSource, context);
 vm.runInNewContext(serviceSource, context);
 
 const { DEFAULTS, createAiConfig } = context.globalThis.aiConfig;
 const { createConfiguredAiService } = context.globalThis.aiService;
 
-assert.match(indexSource, /<script src="ai-config\.js\?v=1\.0"><\/script>\s*<script src="walk-contract\.js\?v=1\.0"><\/script>\s*<script src="ai-service\.js\?v=1\.0"><\/script>/,
+assert.match(indexSource, /<script src="ai-config\.js\?v=1\.0"><\/script>\s*<script src="walk-contract\.js\?v=1\.0"><\/script>\s*<script src="prompt-builder\.js\?v=1\.0"><\/script>\s*<script src="ai-service\.js\?v=1\.0"><\/script>/,
   "configuration must load before the AI service");
 assert.match(serviceWorkerSource, /"\.\/ai-config\.js"/, "configuration must remain available offline");
 

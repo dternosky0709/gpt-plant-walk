@@ -10,6 +10,13 @@
     return global.walkContract.normalizeWalkForAi(walk);
   }
 
+  function buildRequest(walk, promptOptions) {
+    if (!global.promptBuilder || typeof global.promptBuilder.buildPromptRequest !== "function") {
+      throw new Error("The AI prompt builder must be loaded before creating an analysis request.");
+    }
+    return global.promptBuilder.buildPromptRequest(walk, promptOptions);
+  }
+
   function validateProvider(provider) {
     if (!provider || typeof provider.analyzeWalk !== "function") {
       throw new TypeError("An AI provider with analyzeWalk(walk) is required.");
@@ -30,12 +37,14 @@
 
   function createAiService(options) {
     const provider = options && options.provider;
+    const promptOptions = options && options.promptOptions;
     validateProvider(provider);
 
     return Object.freeze({
       async analyzeWalk(walk) {
         const normalizedWalk = normalizeWalk(walk);
-        const analysis = await provider.analyzeWalk(normalizedWalk);
+        const request = buildRequest(normalizedWalk, promptOptions);
+        const analysis = await provider.analyzeWalk(request);
         validateAnalysis(analysis);
         if (analysis.walkId !== normalizedWalk.walkId) {
           throw new Error("AI analysis walkId must match the requested walk.");
@@ -50,9 +59,11 @@
     return Object.freeze({
       name: MOCK_PROVIDER_NAME,
       config: providerConfig,
-      async analyzeWalk(walk) {
+      async analyzeWalk(request) {
+        const userMessage = request.messages.find(message => message.role === "user");
+        const walk = JSON.parse(userMessage.content.slice(userMessage.content.indexOf("\n") + 1));
         return {
-          walkId: walk.walkId,
+          walkId: request.metadata.walkId,
           provider: MOCK_PROVIDER_NAME,
           status: "mock",
           summary: "Mock analysis only. No hosted AI request was made.",
@@ -74,7 +85,10 @@
     if (config.providerMode !== MOCK_PROVIDER_NAME) {
       throw new Error("Only mock AI provider mode is available in this release.");
     }
-    return createAiService({ provider: createMockAiProvider(config) });
+    return createAiService({
+      provider: createMockAiProvider(config),
+      promptOptions: { model: config.model, maxOutputTokens: config.maxOutputTokens }
+    });
   }
 
   global.aiService = Object.freeze({

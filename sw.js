@@ -8,6 +8,7 @@ const FILES_TO_CACHE = [
   "./storage.js",
   "./ai-config.js",
   "./walk-contract.js",
+  "./prompt-builder.js",
   "./ai-service.js",
   "./app.js",
   "./issue-deletion.js",
