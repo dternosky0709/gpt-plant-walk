@@ -3,11 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GPT Plant Walk</title>
+  <title>GPT Plant Walk 1.0</title>
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="styles.css?v=issue-delete-v1" />
-  <link rel="stylesheet" href="settings.css?v=0.9.4-alpha7" />
-  <link rel="stylesheet" href="report-branding.css?v=0.9.4-alpha7" />
+  <link rel="stylesheet" href="styles.css?v=1.0" />
+  <link rel="stylesheet" href="settings.css?v=1.0" />
   <meta name="theme-color" content="#173826" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Plant Walk" />
@@ -18,8 +17,8 @@
   <header class="app-header no-print">
     <div class="header-row">
       <div>
-        <h1>GPT Plant Walk</h1>
-        <p>Maintenance observations, photos, reports, and ChatGPT-ready summaries.</p>
+        <h1>GPT Plant Walk 1.0</h1>
+        <p>Fast field capture and professional maintenance packets.</p>
       </div>
       <button id="settingsBtn" class="icon-button" type="button" aria-label="Open Settings">⚙︎</button>
     </div>
@@ -28,8 +27,8 @@
   <main>
     <section id="dashboardSection">
       <section class="card no-print hero-card">
-        <h2>Plant Walk Dashboard</h2>
-        <p>Start a new walk, capture issues, attach photos, and generate a professional report.</p>
+        <h2>Plant Walk</h2>
+        <p>Capture observations and photos, then generate a maintenance packet.</p>
         <button id="startWalkBtn">Start Plant Walk</button>
         <button id="viewWalksBtn" class="secondary">Previous Walks</button>
       </section>
@@ -57,7 +56,7 @@
         <div id="selectedPhotoPreview" class="photo-grid"></div>
 
         <button id="saveIssueBtn">Save Issue</button>
-        <button id="finishWalkBtn" class="secondary">Finish Walk / Generate Report</button>
+        <button id="finishWalkBtn" class="secondary">Finish Walk</button>
 
         <h3>Saved Issues</h3>
         <div id="issueList"></div>
@@ -70,16 +69,11 @@
 
       <section id="reportSection" class="card hidden">
         <div class="report-actions no-print">
-          <p class="muted"><strong>Packet workflow:</strong> Generate the PDFBolt maintenance packet, or keep using the raw PDF and ChatGPT prompt during staged rollout.</p>
+          <p class="muted">Generate and download the maintenance packet for this completed walk.</p>
           <button id="generatePacketBtn">Generate Maintenance Packet</button>
-          <button id="printPdfBtn" class="secondary">Save Raw Plant Walk PDF</button>
-          <button id="copyReportBtn" class="secondary">Copy AI Prompt</button>
           <button id="backToStartBtn" class="secondary">Back to Start</button>
           <p id="packetStatus" class="muted hidden" role="status" aria-live="polite"></p>
         </div>
-        <h2 class="no-print">ChatGPT-Ready AI Prompt</h2>
-        <textarea id="reportOutput" class="no-print" readonly></textarea>
-        <article id="professionalReport"></article>
       </section>
     </section>
 
@@ -166,8 +160,8 @@
 
         <div class="settings-group">
           <h3>About</h3>
-          <div class="about-row"><span>App Version</span><strong>v0.9.4-alpha7</strong></div>
-          <div class="about-row"><span>Work Order Standard</span><strong>v1.0</strong></div>
+          <div class="about-row"><span>App Version</span><strong>1.0</strong></div>
+          <div class="about-row"><span>Maintenance Packet</span><strong>v2.0</strong></div>
           <div class="about-row"><span>Storage</span><strong>Local / IndexedDB</strong></div>
         </div>
 
@@ -177,15 +171,13 @@
     </section>
   </main>
 
-  <footer class="no-print"><p id="appVersionText">GPT Plant Walk v0.9.4-alpha7 — Sprint 8 Alpha 7</p></footer>
+  <footer class="no-print"><p id="appVersionText">GPT Plant Walk 1.0</p></footer>
 
-  <script src="storage.js?v=0.9.4-alpha7"></script>
-  <script src="issue-deletion.js?v=issue-delete-v1"></script>
-  <script src="walk-reset.js?v=walk-reset-v1"></script>
-  <script src="app.js?v=walk-reset-v1"></script>
-  <script src="settings.js?v=0.9.4-alpha7"></script>
-  <script src="report-branding.js?v=0.9.4-alpha7"></script>
-  <script src="pdfbolt.js?v=work-order-v2"></script>
-  <script src="release.js?v=0.9.4-alpha7"></script>
+  <script src="storage.js?v=1.0"></script>
+  <script src="issue-deletion.js?v=1.0"></script>
+  <script src="walk-reset.js?v=1.0"></script>
+  <script src="app.js?v=1.0"></script>
+  <script src="settings.js?v=1.0"></script>
+  <script src="pdfbolt.js?v=1.0"></script>
 </body>
 </html>

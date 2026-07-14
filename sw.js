@@ -1,25 +1,16 @@
-const CACHE_NAME = "gpt-plant-walk-walk-reset-v1";
+const CACHE_NAME = "gpt-plant-walk-1.0";
 
 const FILES_TO_CACHE = [
   "./",
   "./index.html",
   "./styles.css",
   "./settings.css",
-  "./report-branding.css",
-  "./sprint8.css",
-  "./sprint8-alpha6-fix.css",
-  "./sprint8-alpha7-fix.css",
   "./storage.js",
   "./app.js",
   "./issue-deletion.js",
   "./walk-reset.js",
   "./settings.js",
-  "./report-branding.js",
   "./pdfbolt.js",
-  "./release.js",
-  "./sprint8.js",
-  "./sprint8-alpha7-fix.js",
-  "./sprint9-direct.js",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png"

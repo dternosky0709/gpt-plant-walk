@@ -1,63 +1,28 @@
-# GPT Plant Walk
+# GPT Plant Walk 1.0
 
-A Progressive Web App for maintenance plant walks.
+A mobile-first Progressive Web App for capturing plant-walk observations and photos and generating professional maintenance packets.
 
-## Version
+## Version 1.0 workflow
 
-v0.1.0
+1. Start a plant walk.
+2. Record and save issues with voice or typed observations and one photo per issue.
+3. Review saved issues and delete an incorrect issue when needed.
+4. Finish the walk and generate the Maintenance Packet v2.0 PDF.
+5. Return to the clean start screen or reopen a completed walk from Previous Walks.
 
-## MVP Features Included
+## Included
 
-- Start Plant Walk
-- Record Issue
-- Voice Dictation
-- Multiple Photos
-- Auto-save every issue
-- Previous Walks
-- Professional printable PDF report with embedded photos
-- ChatGPT-ready report
-- Installable on iPhone Home Screen
-- Offline capable
+- Mobile and installable PWA experience
+- Offline capture and IndexedDB persistence
+- Voice-assisted observations
+- Single-photo issue capture
+- Saved-issue deletion
+- Previous Walks history
+- Server-side PDFBolt Maintenance Packet generation
+- Back-to-Start reset that preserves completed history
 
-## How to Deploy to GitHub Pages
+Hosted AI analysis is intentionally outside the 1.0 release. Missing engineering-analysis fields display “Field verification required.” See `PDFBOLT_SETUP.md` for deployment configuration.
 
-1. Upload all files in this folder to the root of your GitHub repository.
-2. Go to repository Settings.
-3. Open Pages.
-4. Set source to Deploy from branch.
-5. Select branch: main.
-6. Select folder: /root.
-7. Save.
-8. Open the GitHub Pages URL.
+## iPhone installation
 
-## iPhone Install
-
-1. Open the GitHub Pages URL in Safari.
-2. Tap Share.
-3. Tap Add to Home Screen.
-4. Launch GPT Plant Walk from the Home Screen.
-
-## Notes
-
-Voice dictation depends on browser support. Photo capture and offline storage work locally in the browser.
-
-## Sprint 1
-
-Created the first working PWA foundation using plain HTML, CSS, and JavaScript.
-
-## Sprint 2
-
-Added voice dictation and professional printable PDF reporting with embedded photos.
-
-## Sprint 3 / v0.1.0
-
-Created a complete deployable project package with app icons, polished UI, offline cache, and GitHub Pages-ready structure.
-
-
-## Sprint 4.1 RC2
-
-- Fixed Start Voice Dictation so the Observation box is focused automatically.
-- Fixed new plant walks so the previous observation draft is cleared.
-- Scoped draft recovery to the active unfinished walk only.
-- Added active walk recovery after app interruption.
-- Updated displayed app version to v0.4.1-rc2.
+Open the deployed app in Safari, tap Share, choose Add to Home Screen, and launch GPT Plant Walk from the installed icon.

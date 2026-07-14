@@ -1,5 +1,5 @@
 const SETTINGS_KEY = "gptPlantWalkSettings";
-const SETTINGS_APP_VERSION = "v0.8.1-alpha2";
+const SETTINGS_APP_VERSION = "1.0";
 
 const defaultSettings = {
   companyName: "",

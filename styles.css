@@ -215,14 +215,7 @@ input { margin-top: 8px; width: 100%; }
   break-inside: avoid;
 }
 
-#reportOutput { min-height: 320px; }
 .report-actions { margin-bottom: 16px; }
-
-#professionalReport {
-  padding: 24px;
-  background: white;
-  color: #111;
-}
 
 .report-header {
   border-bottom: 4px solid var(--green);

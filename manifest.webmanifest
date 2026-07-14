@@ -1,12 +1,12 @@
 {
-  "name": "GPT Plant Walk",
+  "name": "GPT Plant Walk 1.0",
   "short_name": "Plant Walk",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#eef2ee",
   "theme_color": "#173826",
-  "description": "Maintenance plant walk app with photos and ChatGPT-ready reports.",
+  "description": "Field maintenance capture with professional maintenance packet generation.",
   "icons": [
     {
       "src": "icon-192.png",

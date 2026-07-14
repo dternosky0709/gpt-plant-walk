@@ -1,4 +1,4 @@
-const APP_VERSION = "v0.7.3-alpha4";
+const APP_VERSION = "1.0";
 const STORAGE_KEY = "gptPlantWalks";
 const DRAFT_KEY = "gptPlantWalkDraft";
 const ACTIVE_WALK_KEY = "gptPlantWalkActiveWalkId";
@@ -29,20 +29,14 @@ const finishWalkBtn = $("finishWalkBtn");
 const clearDraftBtn = $("clearDraftBtn");
 const issueList = $("issueList");
 const walkList = $("walkList");
-const reportOutput = $("reportOutput");
-const copyReportBtn = $("copyReportBtn");
-const printPdfBtn = $("printPdfBtn");
 const backToStartBtn = $("backToStartBtn");
 const voiceBtn = $("voiceBtn");
-const professionalReport = $("professionalReport");
 const appVersionText = $("appVersionText");
 
 startWalkBtn.addEventListener("click", startWalk);
 viewWalksBtn.addEventListener("click", renderPreviousWalks);
 saveIssueBtn.addEventListener("click", saveIssue);
 finishWalkBtn.addEventListener("click", finishWalk);
-copyReportBtn.addEventListener("click", copyReport);
-printPdfBtn.addEventListener("click", () => window.print());
 backToStartBtn.addEventListener("click", () => returnToStart());
 voiceBtn.addEventListener("click", toggleVoiceDictation);
 clearDraftBtn.addEventListener("click", clearDraft);
@@ -360,7 +354,7 @@ function renderPreviousWalks() {
   walks.forEach(walk => {
     const div = document.createElement("div");
     div.className = "walk";
-    div.innerHTML = `<strong>Plant Walk</strong><p><strong>Started:</strong> ${escapeHtml(walk.startedAt)}</p><p><strong>Status:</strong> ${escapeHtml(walk.status || "completed")}</p><p><strong>Total Issues:</strong> ${walk.issues.length}</p><button data-id="${walk.id}">Generate Report</button>`;
+    div.innerHTML = `<strong>Plant Walk</strong><p><strong>Started:</strong> ${escapeHtml(walk.startedAt)}</p><p><strong>Status:</strong> ${escapeHtml(walk.status || "completed")}</p><p><strong>Total Issues:</strong> ${walk.issues.length}</p><button data-id="${walk.id}">Open Walk</button>`;
     div.querySelector("button").addEventListener("click", () => generateReport(walk.id));
     walkList.appendChild(div);
   });
@@ -383,8 +377,6 @@ function generateReport(walkId) {
   const walk = walks.find(item => item.id === walkId);
   if (!walk) return;
   reportedWalkId = walk.id;
-  reportOutput.value = buildChatGptReport(walk);
-  professionalReport.innerHTML = buildProfessionalReportHtml(walk);
   reportSection.classList.remove("hidden");
   previousWalksSection.classList.add("hidden");
   if (!history.state || history.state.plantWalkView !== "report" || history.state.walkId !== walk.id) {
@@ -416,8 +408,6 @@ async function returnToStart({ updateHistory = true } = {}) {
         if (recognition && isListening) recognition.stop();
         isListening = false;
         clearIssueEntryForm();
-        reportOutput.value = "";
-        professionalReport.innerHTML = "";
         renderIssues();
       },
       showStart: () => {
@@ -435,129 +425,6 @@ async function returnToStart({ updateHistory = true } = {}) {
   } finally {
     backToStartBtn.disabled = false;
   }
-}
-
-function buildChatGptReport(walk) {
-  let report = `GPT PLANT WALK AI MAINTENANCE REPORT REQUEST
-
-ROLE
-You are acting as a senior Maintenance Manager, Mechanical Maintenance Planner, Reliability Engineer, Controls Engineer, and Engineering Director reviewing a real plant walk.
-
-PRIMARY OBJECTIVE
-Create a concise, practical maintenance report that helps the maintenance team decide what to fix, how serious it is, what work orders to create, and what reliability improvements should be considered.
-
-FIELD-WORKFLOW CONTEXT
-The plant walk was captured quickly using short voice-dictated observations and photos. Do not require the field user to classify issues during the walk. Infer equipment, area, trade, priority, likely repair approach, and work order details from the observation text and photos. If uncertain, say what should be verified in the field.
-
-PRIORITY NAMING STANDARD
-Use priority names only. Do not label them P1, P2, P3, or P4.
-- Immediate: production down, high risk, or equipment likely to fail very soon.
-- Urgent: should be handled soon to prevent downtime or equipment damage.
-- Planned: needs a work order but can be scheduled with normal maintenance planning.
-- Monitor: track during future walks or PMs; no immediate work required unless condition worsens.
-
-REPORT STYLE
-- Be practical and maintenance-focused.
-- Avoid long generic executive-summary language.
-- Avoid boilerplate sections unless there is an actual issue to discuss.
-- Every issue should become a suggested work order unless it is clearly informational only.
-- Give mechanics useful repair direction, not just "inspect and correct."
-- Keep work orders short enough to be useful in a CMMS.
-- Clearly state assumptions and uncertainty.
-
-FINAL REPORT FORMAT
-Use exactly these sections:
-
-1. Maintenance Summary
-Write one short paragraph summarizing the walk, the main maintenance concerns, and the overall urgency.
-
-2. Prioritized Action List
-Create a table with columns:
-Priority | Issue | Likely Equipment / Area | Suggested WO # | Recommended Action
-Use only these priority names: Immediate, Urgent, Planned, Monitor.
-
-3. Suggested Work Orders
-For each issue, create a work order in this format:
-WO-001: [Short work order title]
-- Priority: Immediate, Urgent, Planned, or Monitor
-- Area / Equipment:
-- Trade: Mechanical, Electrical, Controls, Facilities, Reliability, Housekeeping, or Other
-- Problem:
-- Recommended Repair:
-- Materials / Parts:
-- Verification:
-- Confidence: High, Medium, or Low
-
-4. Mechanical / Maintenance Repair Notes
-Provide practical repair insight for the maintenance team. Include likely checks, adjustments, replacement steps, inspection points, and what to verify after repair.
-
-5. Reliability / Engineering Notes
-List any PM changes, spare parts recommendations, repeat-failure concerns, design improvements, access improvements, guarding/cable/sensor protection, or reliability follow-up items.
-
-6. Issue Details With Original Notes
-For traceability, list each issue exactly as captured with time, observation, photo count, and any visual context inferred from photos.
-
-PLANT WALK DETAILS
-Walk Started: ${walk.startedAt}
-Walk Ended: ${walk.endedAt || "Not completed"}
-Total Issues: ${walk.issues.length}
-App Version: ${walk.version || APP_VERSION}
-
-RAW OBSERVATIONS
-
-`;
-
-  walk.issues.forEach((issue, index) => {
-    const wo = String(index + 1).padStart(3, "0");
-    report += `Issue ${index + 1}
-Suggested WO #: WO-${wo}
-Time: ${issue.time}
-Observation:
-${issue.observation || "Photo-only issue"}
-Photos: ${issue.photos.length > 0 ? `Yes - ${issue.photos.length} photo(s) embedded in the PDF report` : "No"}
-Instruction: Infer likely equipment, priority name, trade, repair steps, parts/materials, verification, and reliability/engineering notes from this issue.
---------------------------------
-
-`;
-  });
-  return report;
-}
-
-function buildProfessionalReportHtml(walk) {
-  const totalPhotos = walk.issues.reduce((count, issue) => count + issue.photos.length, 0);
-  let html = `<div class="report-header"><p class="report-kicker">MAINTENANCE PLANNING</p><h1>Plant Walk Report</h1><p><strong>Started:</strong> ${escapeHtml(walk.startedAt)}</p><p><strong>Ended:</strong> ${escapeHtml(walk.endedAt || "Not completed")}</p><p><strong>Total Issues:</strong> ${walk.issues.length}</p><p><strong>Total Photos:</strong> ${totalPhotos}</p><p><strong>App Version:</strong> ${escapeHtml(walk.version || APP_VERSION)}</p></div>
-<section class="report-section"><h2>1. Maintenance Summary</h2><p>This walk captured ${walk.issues.length} maintenance observation${walk.issues.length === 1 ? "" : "s"}. Use the ChatGPT-ready report text to generate the final maintenance summary, named work priorities, repair guidance, and reliability recommendations from the original notes and photos.</p></section>
-<section class="report-section"><h2>2. Prioritized Action List</h2><table><thead><tr><th>Priority</th><th>Issue</th><th>Suggested WO</th><th>Action</th></tr></thead><tbody>`;
-
-  walk.issues.forEach((issue, index) => {
-    const wo = String(index + 1).padStart(3, "0");
-    html += `<tr><td>AI to assign</td><td>Issue ${index + 1}</td><td>WO-${wo}</td><td>${escapeHtml(issue.observation || "Photo-only issue")}</td></tr>`;
-  });
-
-  html += `</tbody></table></section><section class="report-section"><h2>3. Suggested Work Orders</h2>`;
-  walk.issues.forEach((issue, index) => {
-    const wo = String(index + 1).padStart(3, "0");
-    html += `<div class="report-issue compact-report-issue"><h3>WO-${wo}: Issue ${index + 1}</h3><p><strong>Original Observation:</strong> ${escapeHtml(issue.observation || "Photo-only issue")}</p><p><strong>AI Planning Needed:</strong> Determine priority name, likely equipment/area, trade, failure mode, repair steps, materials, verification, and confidence from the observation and photo(s).</p></div>`;
-  });
-
-  html += `</section><section class="report-section"><h2>4. Mechanical / Maintenance Repair Notes</h2><p>ChatGPT should provide practical repair guidance for each issue, including likely inspection points, adjustments, replacement steps, parts or materials, and post-repair checks.</p></section><section class="report-section"><h2>5. Reliability / Engineering Notes</h2><p>ChatGPT should identify PM improvements, spare parts needs, repeat-failure concerns, and engineering improvements such as access changes, guarding, cable management, sensor protection, or design changes.</p></section><section class="report-section"><h2>6. Issue Details With Original Notes</h2>`;
-
-  walk.issues.forEach((issue, index) => {
-    html += `<div class="report-issue"><h3>Issue ${index + 1}</h3><p><strong>Time:</strong> ${escapeHtml(issue.time)}</p><p><strong>Observation:</strong></p><p>${escapeHtml(issue.observation || "Photo-only issue")}</p><p><strong>Photos:</strong> ${issue.photos.length}</p><div class="report-photo-grid">`;
-    issue.photos.forEach(photo => {
-      html += `<img class="report-photo" src="${photo}" alt="Issue photo" />`;
-    });
-    html += `</div></div>`;
-  });
-
-  html += `</section>`;
-  return html;
-}
-
-function copyReport() {
-  reportOutput.select();
-  document.execCommand("copy");
-  alert("AI prompt copied. Attach the raw Plant Walk PDF in ChatGPT so photos are included in the analysis.");
 }
 
 function focusObservationField() {
