@@ -1,5 +1,6 @@
+import { renderMaintenancePacketHtml } from "./maintenance-packet-template.js";
+
 const PDFBOLT_DIRECT_URL = "https://api.pdfbolt.com/v1/direct";
-const DEFAULT_TEMPLATE_ID = "408df28f-e62c-433e-aefe-ab600eca51a2";
 const MAX_REQUEST_BYTES = 8 * 1024 * 1024;
 
 function setCorsHeaders(response) {
@@ -47,8 +48,6 @@ export default async function handler(request, response) {
   }
 
   const apiKey = process.env.PDFBOLT_API_KEY;
-  const templateId = process.env.PDFBOLT_TEMPLATE_ID || DEFAULT_TEMPLATE_ID;
-
   if (!apiKey) {
     sendJson(response, 500, {
       error: "PDFBolt is not configured. Add PDFBOLT_API_KEY to the deployment environment."
@@ -75,6 +74,7 @@ export default async function handler(request, response) {
       return;
     }
 
+    const html = renderMaintenancePacketHtml(packet);
     const pdfBoltResponse = await fetch(PDFBOLT_DIRECT_URL, {
       method: "POST",
       headers: {
@@ -82,10 +82,10 @@ export default async function handler(request, response) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        templateId,
-        templateData: packet,
+        html: Buffer.from(html, "utf8").toString("base64"),
         format: "Letter",
-        printBackground: true
+        printBackground: true,
+        margin: { top: "0", right: "0", bottom: "0", left: "0" }
       })
     });
 

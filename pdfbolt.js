@@ -1,4 +1,4 @@
-const PACKET_SCHEMA_VERSION = "PlantWalkPacketV1";
+const PACKET_SCHEMA_VERSION = "PlantWalkPacketV2";
 const PDFBOLT_ENDPOINT = "/api/generate-maintenance-packet";
 
 let currentPacketWalkId = null;
@@ -68,36 +68,31 @@ function buildPacketIssue(issue, index, walk, settings) {
       }))
     : [];
 
+  const allowedPriorities = ["Immediate", "Urgent", "Planned", "Monitor"];
+  const priority = allowedPriorities.includes(issue.priority) ? issue.priority : "Field verification required";
+  const correctiveWork = Array.isArray(issue.correctiveWork)
+    ? issue.correctiveWork.filter(Boolean)
+    : Array.isArray(issue.repairSteps)
+      ? issue.repairSteps.filter(Boolean)
+      : [];
+
   return {
     sequence,
     workOrderNumber,
     timeObserved: issue.time || "Not recorded",
-    priority: "Planned",
-    priorityClass: "planned",
-    trade: "Field verification required",
-    area: "Field verification required",
-    equipment: `Issue ${sequence}`,
-    category: "Corrective Maintenance",
-    reportedBy: "Plant Walk",
+    priority,
+    priorityClass: allowedPriorities.includes(priority) ? priority.toLowerCase() : "unverified",
+    trade: issue.trade || "Field verification required",
+    area: issue.area || "Field verification required",
+    equipment: issue.equipment || "Field verification required",
     originalObservation: observation,
-    conditionAssessment: "Pending maintenance analysis and field verification.",
-    likelyFailureMode: "To be determined from the observation, issue photo, and field inspection.",
-    likelyCause: "Not confirmed. Verify during work planning.",
-    operationalRisk: "Evaluate before scheduling work.",
-    safetyImpact: "Review site conditions and apply required safety procedures before work.",
-    fieldVerification: "Confirm the asset, location, failure condition, isolation requirements, and repair scope in the field.",
-    recommendedRepair: observation,
-    parts: [],
-    repairSteps: [
-      "Locate and positively identify the affected asset.",
-      "Verify the reported condition and determine the safe repair scope.",
-      "Complete the approved repair using plant procedures and manufacturer guidance."
-    ],
-    verificationSteps: [
-      "Inspect the completed work for proper installation and housekeeping.",
-      "Function-test the equipment under safe operating conditions.",
-      "Document results and any additional follow-up work required."
-    ],
+    conditionSummary: issue.conditionSummary || issue.conditionAssessment || "Field verification required",
+    likelyFailureMode: issue.likelyFailureMode || "Field verification required",
+    operationalImpact: issue.operationalImpact || issue.operationalRisk || "Field verification required",
+    safetyConsiderations: issue.safetyConsiderations || issue.safetyImpact || "Field verification required",
+    aiConfidence: issue.aiConfidence || issue.confidence || "Field verification required",
+    correctiveWork,
+    recommendedAction: correctiveWork[0] || "Field verification required",
     photos,
     singlePhoto: photos.length === 1
   };
@@ -116,28 +111,15 @@ function buildPlantWalkPacket(walk) {
     },
     report: {
       title: "Plant Walk Maintenance Packet",
-      subtitle: "Maintenance observations, initial work planning, issue photos, and traceability.",
       walkId: walk.id,
       inspector: "Plant Walk User",
       startedAt: walk.startedAt,
       completedAt: walk.endedAt || "Not completed",
       generatedAt: new Date().toLocaleString(),
       totalIssues: issues.length,
-      overallPriority: "Pending maintenance review",
-      packetVersion: "v1.1",
-      executiveSummary: `${issues.length} maintenance issue${issues.length === 1 ? " was" : "s were"} recorded during this plant walk. Initial work-order pages have been prepared from the original observations and photos. Maintenance analysis and field verification are required before execution.`,
-      safetySummary: "Review each issue in the field and apply plant safety, lockout/tagout, access, and guarding requirements before work begins.",
-      reliabilitySummary: "Use the completed field review to identify repeat conditions, PM gaps, spare-parts needs, and follow-up reliability actions.",
-      engineeringSummary: "Engineering review is required where the permanent corrective action involves controls, guarding, structural changes, equipment redesign, or recurring failures.",
-      actionItems: issues.map(issue => ({
-        sequence: issue.sequence,
-        workOrderNumber: issue.workOrderNumber,
-        priority: issue.priority,
-        equipment: issue.equipment,
-        area: issue.area,
-        recommendedAction: issue.originalObservation,
-        trade: issue.trade
-      }))
+      packetVersion: "v2.0",
+      managementAttention: ["Field verification is required before management priorities are assigned."],
+      safetyOperationalRisks: ["Review each issue and apply site-specific safety procedures before work begins."]
     },
     issues
   };

@@ -1,4 +1,4 @@
-const CACHE_NAME = "gpt-plant-walk-v0-9-5-alpha1-pdfbolt";
+const CACHE_NAME = "gpt-plant-walk-work-order-v2";
 
 const FILES_TO_CACHE = [
   "./",
