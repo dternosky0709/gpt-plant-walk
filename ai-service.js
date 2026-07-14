@@ -3,16 +3,11 @@
 
   const MOCK_PROVIDER_NAME = "mock";
 
-  function validateWalk(walk) {
-    if (!walk || typeof walk !== "object" || Array.isArray(walk)) {
-      throw new TypeError("A walk object is required.");
+  function normalizeWalk(walk) {
+    if (!global.walkContract || typeof global.walkContract.normalizeWalkForAi !== "function") {
+      throw new Error("The AI walk data contract must be loaded before creating an analysis request.");
     }
-    if (typeof walk.id !== "string" || !walk.id.trim()) {
-      throw new TypeError("Walk id is required.");
-    }
-    if (!Array.isArray(walk.issues)) {
-      throw new TypeError("Walk issues must be an array.");
-    }
+    return global.walkContract.normalizeWalkForAi(walk);
   }
 
   function validateProvider(provider) {
@@ -39,10 +34,10 @@
 
     return Object.freeze({
       async analyzeWalk(walk) {
-        validateWalk(walk);
-        const analysis = await provider.analyzeWalk(walk);
+        const normalizedWalk = normalizeWalk(walk);
+        const analysis = await provider.analyzeWalk(normalizedWalk);
         validateAnalysis(analysis);
-        if (analysis.walkId !== walk.id) {
+        if (analysis.walkId !== normalizedWalk.walkId) {
           throw new Error("AI analysis walkId must match the requested walk.");
         }
         return analysis;
@@ -57,14 +52,14 @@
       config: providerConfig,
       async analyzeWalk(walk) {
         return {
-          walkId: walk.id,
+          walkId: walk.walkId,
           provider: MOCK_PROVIDER_NAME,
           status: "mock",
           summary: "Mock analysis only. No hosted AI request was made.",
           findings: walk.issues.map((issue, index) => ({
-            issueId: typeof issue.id === "string" ? issue.id : "",
-            sequence: index + 1,
-            observation: typeof issue.observation === "string" ? issue.observation : ""
+            issueId: issue.issueId,
+            sequence: issue.order,
+            observation: issue.observation
           }))
         };
       }

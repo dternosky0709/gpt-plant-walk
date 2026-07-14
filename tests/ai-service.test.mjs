@@ -3,12 +3,14 @@ import fs from "node:fs";
 import vm from "node:vm";
 
 const source = fs.readFileSync(new URL("../ai-service.js", import.meta.url), "utf8");
+const contractSource = fs.readFileSync(new URL("../walk-contract.js", import.meta.url), "utf8");
 const indexSource = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const serviceWorkerSource = fs.readFileSync(new URL("../sw.js", import.meta.url), "utf8");
 const context = { globalThis: {} };
+vm.runInNewContext(contractSource, context);
 vm.runInNewContext(source, context);
 
-assert.match(indexSource, /<script src="ai-service\.js\?v=1\.0"><\/script>/, "the browser app must load the AI service layer");
+assert.match(indexSource, /<script src="walk-contract\.js\?v=1\.0"><\/script>\s*<script src="ai-service\.js\?v=1\.0"><\/script>/, "the contract must load before the AI service layer");
 assert.match(serviceWorkerSource, /"\.\/ai-service\.js"/, "the AI service layer must remain available offline");
 
 const { createAiService, createMockAiProvider } = context.globalThis.aiService;
@@ -33,7 +35,8 @@ const walk = {
   });
 
   const result = await service.analyzeWalk(walk);
-  assert.equal(receivedWalk, walk, "the service must delegate the original walk to its provider");
+  assert.notEqual(receivedWalk, walk, "the service must not delegate raw application data");
+  assert.equal(receivedWalk.walkId, walk.id, "the service must delegate the normalized contract");
   assert.equal(result, expected, "the service must return the provider analysis");
 }
 
@@ -42,7 +45,7 @@ assert.throws(() => createAiService({ provider: {} }), /provider.*analyzeWalk/i)
 
 {
   const service = createAiService({ provider: createMockAiProvider() });
-  await assert.rejects(service.analyzeWalk(null), /walk object/i);
+  await assert.rejects(service.analyzeWalk(null), /walk.*plain object/i);
   await assert.rejects(service.analyzeWalk({ id: "", issues: [] }), /walk id/i);
   await assert.rejects(service.analyzeWalk({ id: "walk-1" }), /issues must be an array/i);
 }
