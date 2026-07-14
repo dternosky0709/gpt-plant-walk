@@ -50,9 +50,11 @@
     });
   }
 
-  function createMockAiProvider() {
+  function createMockAiProvider(config) {
+    const providerConfig = config || { providerMode: MOCK_PROVIDER_NAME, model: "mock-v1" };
     return Object.freeze({
       name: MOCK_PROVIDER_NAME,
+      config: providerConfig,
       async analyzeWalk(walk) {
         return {
           walkId: walk.id,
@@ -69,8 +71,20 @@
     });
   }
 
+  function createConfiguredAiService(configOverrides) {
+    if (!global.aiConfig || typeof global.aiConfig.createAiConfig !== "function") {
+      throw new Error("AI configuration layer must be loaded before creating the configured AI service.");
+    }
+    const config = global.aiConfig.createAiConfig(configOverrides);
+    if (config.providerMode !== MOCK_PROVIDER_NAME) {
+      throw new Error("Only mock AI provider mode is available in this release.");
+    }
+    return createAiService({ provider: createMockAiProvider(config) });
+  }
+
   global.aiService = Object.freeze({
     createAiService,
-    createMockAiProvider
+    createMockAiProvider,
+    createConfiguredAiService
   });
 })(typeof globalThis !== "undefined" ? globalThis : window);
