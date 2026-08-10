@@ -1,8 +1,8 @@
 # GPT Plant Walk Roadmap
 
-## GPT Plant Walk 1.0
+## GPT Plant Walk 1.1
 
-Version 1.0 provides the stable field workflow: capture observations and one photo per issue, preserve walks locally and offline, remove incorrect saved issues, reopen completed walks, generate Maintenance Packet v2.0 through the server-side PDFBolt endpoint, and return cleanly to the start screen.
+Version 1.1 provides the stable field workflow plus the Maintenance Planner synchronization foundation: every completed-walk observation has a permanent Plant Walk work-order ID, is stored in a durable IndexedDB outbound queue, and is retried through the authenticated server boundary until Planner acceptance.
 
 Release hardening and field validation take priority over feature expansion.
 
@@ -12,7 +12,7 @@ Phase 2 may add server-side, structured engineering analysis after capture. Inte
 
 ## Later phases
 
-Potential later work includes CMMS integration, equipment history, reliability trends, dashboards, collaboration, and cloud synchronization. These are not part of GPT Plant Walk 1.0.
+Potential later work includes durable photo-byte transfer, shared equipment identity, reliability trends, dashboards, collaboration, and broader cloud synchronization.
 
 ## Product principle
 

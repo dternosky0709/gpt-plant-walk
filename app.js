@@ -1,4 +1,4 @@
-const APP_VERSION = "1.0";
+const APP_VERSION = "1.1";
 const STORAGE_KEY = "gptPlantWalks";
 const DRAFT_KEY = "gptPlantWalkDraft";
 const ACTIVE_WALK_KEY = "gptPlantWalkActiveWalkId";
@@ -12,6 +12,7 @@ let isProcessingPhotos = false;
 let photoConversionError = false;
 let deletingIssueId = null;
 let reportedWalkId = null;
+let plannerSyncInProgress = false;
 
 const $ = id => document.getElementById(id);
 const startWalkBtn = $("startWalkBtn");
@@ -32,6 +33,10 @@ const walkList = $("walkList");
 const backToStartBtn = $("backToStartBtn");
 const voiceBtn = $("voiceBtn");
 const appVersionText = $("appVersionText");
+const plannerSyncPanel = $("plannerSyncPanel");
+const plannerSyncTitle = $("plannerSyncTitle");
+const plannerSyncDetail = $("plannerSyncDetail");
+const retryPlannerSyncBtn = $("retryPlannerSyncBtn");
 
 startWalkBtn.addEventListener("click", startWalk);
 viewWalksBtn.addEventListener("click", renderPreviousWalks);
@@ -40,6 +45,7 @@ finishWalkBtn.addEventListener("click", finishWalk);
 backToStartBtn.addEventListener("click", () => returnToStart());
 voiceBtn.addEventListener("click", toggleVoiceDictation);
 clearDraftBtn.addEventListener("click", clearDraft);
+retryPlannerSyncBtn.addEventListener("click", retryReportedWalkSync);
 issueText.addEventListener("input", saveDraft);
 photoInput.addEventListener("change", handleSelectedPhotos);
 
@@ -47,6 +53,7 @@ if (appVersionText) appVersionText.textContent = `GPT Plant Walk ${APP_VERSION}`
 updateSaveIssueButtonState();
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
 initializeApp();
+window.addEventListener("online", () => processPlannerQueue());
 window.addEventListener("popstate", event => {
   if (event.state && event.state.plantWalkView === "report") return;
   if (!reportSection.classList.contains("hidden")) returnToStart({ updateHistory: false });
@@ -67,8 +74,10 @@ async function initializeApp() {
 
   const activeWalkId = localStorage.getItem(ACTIVE_WALK_KEY);
   activeWalk = activeWalkId ? walks.find(walk => walk.id === activeWalkId && walk.status !== "completed") || null : null;
+  await reconcileCompletedWalkQueues();
   await restoreInterruptedWalk();
   renderIssues();
+  processPlannerQueue().catch(error => console.error("Could not process Planner queue.", error));
   if (!history.state || !history.state.plantWalkView) history.replaceState({ plantWalkView: "start" }, "");
 }
 
@@ -252,7 +261,24 @@ async function saveIssue() {
     if (!activeWalk) return alert("Start a plant walk first.");
     if (!observation && selectedPhotos.length === 0) return alert("Enter an observation or attach a photo before saving.");
 
-    activeWalk.issues.push({ id: crypto.randomUUID(), time: new Date().toLocaleTimeString(), observation, photos: [...selectedPhotos] });
+    const observedAt = new Date();
+    const workOrderId = typeof window.allocateWorkOrderNumber === "function"
+      ? window.allocateWorkOrderNumber(observedAt)
+      : `WO-${observedAt.getTime()}`;
+    activeWalk.issues.push({
+      id: crypto.randomUUID(),
+      time: observedAt.toLocaleTimeString(),
+      observedAt: observedAt.toISOString(),
+      observation,
+      photos: [...selectedPhotos],
+      workOrderId,
+      initialPriority: "Planned",
+      syncStatus: "not_queued",
+      syncEventId: null,
+      plannerAcceptedAt: null,
+      lastSyncAttemptAt: null,
+      syncError: null
+    });
     await persistWalks();
     clearDraft();
     renderIssues();
@@ -302,7 +328,9 @@ function renderIssues() {
   activeWalk.issues.forEach((issue, index) => {
     const div = document.createElement("div");
     div.className = "issue";
-    div.innerHTML = `<div class="saved-issue-heading"><strong>Issue ${index + 1}</strong><button type="button" class="delete-issue-button" aria-label="Delete Issue ${index + 1}">Delete</button></div><p><strong>Time:</strong> ${escapeHtml(issue.time)}</p><p>${escapeHtml(issue.observation || "Photo-only issue")}</p><p><strong>Photos:</strong> ${issue.photos.length}</p><div class="photo-grid"></div>`;
+    const syncLabel = issue.syncStatus === "synced" ? "Synced" : issue.syncStatus === "sync_failed" ? "Sync failed" : issue.syncStatus === "pending_sync" ? "Pending sync" : "Created";
+    const syncClass = issue.syncStatus === "synced" ? "synced" : issue.syncStatus === "sync_failed" ? "failed" : "pending";
+    div.innerHTML = `<div class="saved-issue-heading"><strong>Issue ${index + 1}</strong><button type="button" class="delete-issue-button" aria-label="Delete Issue ${index + 1}">Delete</button></div><p><strong>Work Order:</strong> ${escapeHtml(issue.workOrderId || "Assigned when saved")}</p><p><strong>Time:</strong> ${escapeHtml(issue.time)}</p><p>${escapeHtml(issue.observation || "Photo-only issue")}</p><p><strong>Photos:</strong> ${issue.photos.length}</p><span class="sync-status ${syncClass}">${syncLabel}</span><div class="photo-grid"></div>`;
     const deleteButton = div.querySelector(".delete-issue-button");
     deleteButton.disabled = deletingIssueId !== null;
     deleteButton.addEventListener("click", () => deleteIssue(issue.id, index + 1));
@@ -354,34 +382,195 @@ function renderPreviousWalks() {
   walks.forEach(walk => {
     const div = document.createElement("div");
     div.className = "walk";
-    div.innerHTML = `<strong>Plant Walk</strong><p><strong>Started:</strong> ${escapeHtml(walk.startedAt)}</p><p><strong>Status:</strong> ${escapeHtml(walk.status || "completed")}</p><p><strong>Total Issues:</strong> ${walk.issues.length}</p><button data-id="${walk.id}">Open Walk</button>`;
+    const sync = window.plannerSync ? window.plannerSync.summarizeWalkSync(walk) : { synced: 0, pending: 0, failed: 0 };
+    const syncText = sync.failed ? `${sync.failed} failed` : sync.pending ? `${sync.pending} pending` : sync.synced ? `${sync.synced} synced` : "Not sent";
+    div.innerHTML = `<strong>Plant Walk</strong><p><strong>Started:</strong> ${escapeHtml(walk.startedAt)}</p><p><strong>Status:</strong> ${escapeHtml(walk.status || "completed")}</p><p><strong>Total Issues:</strong> ${walk.issues.length}</p><p><strong>Planner:</strong> ${escapeHtml(syncText)}</p><button data-id="${walk.id}">Open Walk</button>`;
     div.querySelector("button").addEventListener("click", () => generateReport(walk.id));
     walkList.appendChild(div);
   });
 }
 
-function finishWalk() {
+async function finishWalk() {
   if (!activeWalk) return;
-  activeWalk.status = "completed";
-  activeWalk.endedAt = new Date().toLocaleString();
-  persistWalks();
-  persistActiveWalkId();
-  clearDraft();
-  generateReport(activeWalk.id);
-  activeWalk = null;
-  persistActiveWalkId();
-  activeWalkSection.classList.add("hidden");
+  finishWalkBtn.disabled = true;
+  try {
+    activeWalk.status = "completed";
+    const completedAt = new Date();
+    activeWalk.endedAt = completedAt.toLocaleString();
+    activeWalk.completedAt = completedAt.toISOString();
+    await queueWalkForPlanner(activeWalk);
+    await persistWalks();
+    persistActiveWalkId();
+    clearDraft();
+    generateReport(activeWalk.id);
+    activeWalk = null;
+    persistActiveWalkId();
+    activeWalkSection.classList.add("hidden");
+    processPlannerQueue({ force: true }).catch(error => console.error("Planner sync failed.", error));
+  } catch (error) {
+    console.error("Could not finish walk and queue work orders.", error);
+    if (activeWalk) activeWalk.status = "active";
+    alert("Unable to finish this walk yet. Your saved observations remain available; please try again.");
+  } finally {
+    finishWalkBtn.disabled = false;
+  }
 }
 
 function generateReport(walkId) {
   const walk = walks.find(item => item.id === walkId);
   if (!walk) return;
   reportedWalkId = walk.id;
+  renderPlannerSyncStatus(walk);
   reportSection.classList.remove("hidden");
   previousWalksSection.classList.add("hidden");
   if (!history.state || history.state.plantWalkView !== "report" || history.state.walkId !== walk.id) {
     history.pushState({ plantWalkView: "report", walkId: walk.id }, "");
   }
+}
+
+async function queueWalkForPlanner(walk) {
+  if (!window.appStorage || !window.plannerSync) return;
+  const plantName = window.gptPlantWalkSettings && window.gptPlantWalkSettings.plantName || "";
+  for (const issue of walk.issues) {
+    if (!issue.workOrderId || issue.syncStatus === "synced") continue;
+    const existingEvent = issue.syncEventId && typeof window.appStorage.getSyncEvent === "function"
+      ? await window.appStorage.getSyncEvent(issue.syncEventId)
+      : null;
+    if (existingEvent) continue;
+    if (!issue.observedAt) issue.observedAt = new Date().toISOString();
+    const payload = window.plannerSync.buildIntakePayload({ walk, issue, plantName, eventId: issue.syncEventId || null });
+    issue.syncStatus = "pending_sync";
+    issue.syncEventId = payload.eventId;
+    issue.syncError = null;
+    await window.appStorage.putSyncEvent({
+      eventId: payload.eventId,
+      walkId: walk.id,
+      observationId: issue.id,
+      workOrderId: issue.workOrderId,
+      payload,
+      status: "pending",
+      attemptCount: 0,
+      nextAttemptAt: new Date().toISOString(),
+      lastError: null,
+      acceptedAt: null
+    });
+  }
+}
+
+async function reconcileCompletedWalkQueues() {
+  if (!window.appStorage || !window.plannerSync) return;
+  let changed = false;
+  for (const walk of walks.filter(item => item.status === "completed")) {
+    const before = walk.issues.map(issue => issue.syncEventId || "").join("|");
+    await queueWalkForPlanner(walk);
+    if (before !== walk.issues.map(issue => issue.syncEventId || "").join("|")) changed = true;
+  }
+  if (changed) await persistWalks();
+}
+
+function findQueuedIssue(event) {
+  const walk = walks.find(item => item.id === event.walkId);
+  const issue = walk && walk.issues.find(item => item.id === event.observationId);
+  return { walk, issue };
+}
+
+async function processPlannerQueue({ force = false, walkId = null } = {}) {
+  if (plannerSyncInProgress || !navigator.onLine || !window.appStorage || typeof window.appStorage.loadSyncEvents !== "function") return;
+  plannerSyncInProgress = true;
+  try {
+    const now = Date.now();
+    const events = (await window.appStorage.loadSyncEvents()).filter(event => {
+      if (event.status === "accepted") return false;
+      if (walkId && event.walkId !== walkId) return false;
+      if (force) return true;
+      return event.status !== "failed" && (!event.nextAttemptAt || Date.parse(event.nextAttemptAt) <= now);
+    });
+
+    for (const event of events) {
+      const { issue } = findQueuedIssue(event);
+      if (!issue) continue;
+      issue.lastSyncAttemptAt = new Date().toISOString();
+      try {
+        const response = await fetch(window.plannerSync.SYNC_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(event.payload)
+        });
+        let result = {};
+        try { result = await response.json(); } catch {}
+        if (!response.ok || result.intakeStatus !== "accepted" || result.workOrderId !== issue.workOrderId) {
+          const code = result && result.error && result.error.code || `HTTP_${response.status}`;
+          const error = new Error(result && result.error && result.error.message || "Maintenance Planner rejected the work order.");
+          error.code = code;
+          error.permanent = response.status >= 400 && response.status < 500 && response.status !== 408 && response.status !== 429;
+          throw error;
+        }
+        issue.syncStatus = "synced";
+        issue.plannerAcceptedAt = result.acceptedAt || new Date().toISOString();
+        issue.syncError = null;
+        await window.appStorage.putSyncEvent({ ...event, status: "accepted", acceptedAt: issue.plannerAcceptedAt, lastError: null, nextAttemptAt: null });
+      } catch (error) {
+        const attemptCount = Number(event.attemptCount || 0) + 1;
+        const permanent = Boolean(error && error.permanent);
+        const message = error && error.message ? error.message : "Planner is currently unavailable.";
+        issue.syncStatus = permanent ? "sync_failed" : "pending_sync";
+        issue.syncError = message;
+        await window.appStorage.putSyncEvent({
+          ...event,
+          status: permanent ? "failed" : "pending",
+          attemptCount,
+          lastError: message,
+          nextAttemptAt: permanent ? null : window.plannerSync.nextRetryAt(attemptCount)
+        });
+      }
+      await persistWalks();
+      if (reportedWalkId) {
+        const reportedWalk = walks.find(item => item.id === reportedWalkId);
+        if (reportedWalk) renderPlannerSyncStatus(reportedWalk);
+      }
+    }
+  } finally {
+    plannerSyncInProgress = false;
+    if (!previousWalksSection.classList.contains("hidden")) renderPreviousWalks();
+  }
+}
+
+function renderPlannerSyncStatus(walk) {
+  if (!plannerSyncPanel || !window.plannerSync) return;
+  const summary = window.plannerSync.summarizeWalkSync(walk);
+  plannerSyncPanel.classList.remove("is-synced", "is-pending", "is-failed");
+  retryPlannerSyncBtn.classList.add("hidden");
+  if (summary.total === 0) {
+    plannerSyncTitle.textContent = "No work orders in this walk";
+    plannerSyncDetail.textContent = "There is nothing to send to Maintenance Planner.";
+    return;
+  }
+  if (summary.failed > 0) {
+    plannerSyncPanel.classList.add("is-failed");
+    plannerSyncTitle.textContent = `${summary.failed} work order${summary.failed === 1 ? "" : "s"} need attention`;
+    plannerSyncDetail.textContent = `${summary.synced} of ${summary.total} accepted by Maintenance Planner.`;
+    retryPlannerSyncBtn.classList.remove("hidden");
+    return;
+  }
+  if (summary.synced === summary.total) {
+    plannerSyncPanel.classList.add("is-synced");
+    plannerSyncTitle.textContent = "All work orders synced";
+    plannerSyncDetail.textContent = `${summary.synced} of ${summary.total} accepted by Maintenance Planner.`;
+    return;
+  }
+  plannerSyncPanel.classList.add("is-pending");
+  plannerSyncTitle.textContent = navigator.onLine ? "Sending work orders" : "Work orders queued offline";
+  plannerSyncDetail.textContent = `${summary.synced} of ${summary.total} synced; ${summary.pending + summary.notQueued} pending.`;
+  retryPlannerSyncBtn.classList.remove("hidden");
+}
+
+async function retryReportedWalkSync() {
+  if (!reportedWalkId) return;
+  retryPlannerSyncBtn.disabled = true;
+  await processPlannerQueue({ force: true, walkId: reportedWalkId });
+  retryPlannerSyncBtn.disabled = false;
+  const walk = walks.find(item => item.id === reportedWalkId);
+  if (walk) renderPlannerSyncStatus(walk);
 }
 
 async function returnToStart({ updateHistory = true } = {}) {

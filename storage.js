@@ -1,11 +1,12 @@
 (function (global) {
   const DB_NAME = "gptPlantWalksDb";
-  const DB_VERSION = 1;
+  const DB_VERSION = 2;
   const STORES = {
     walks: "walks",
     issues: "issues",
     photos: "photos",
-    drafts: "drafts"
+    drafts: "drafts",
+    syncEvents: "syncEvents"
   };
 
   let dbPromise = null;
@@ -73,6 +74,10 @@
 
         if (!db.objectStoreNames.contains(STORES.drafts)) {
           db.createObjectStore(STORES.drafts, { keyPath: "id" });
+        }
+
+        if (!db.objectStoreNames.contains(STORES.syncEvents)) {
+          db.createObjectStore(STORES.syncEvents, { keyPath: "eventId" });
         }
       };
 
@@ -170,7 +175,15 @@
           id: issue.id,
           walkId: walk.id,
           time: issue.time,
+          observedAt: issue.observedAt,
           observation: issue.observation,
+          workOrderId: issue.workOrderId,
+          initialPriority: issue.initialPriority || "Planned",
+          syncStatus: issue.syncStatus || "not_queued",
+          syncEventId: issue.syncEventId || null,
+          plannerAcceptedAt: issue.plannerAcceptedAt || null,
+          lastSyncAttemptAt: issue.lastSyncAttemptAt || null,
+          syncError: issue.syncError || null,
           photoIds
         });
         issueIds.push(issue.id);
@@ -182,6 +195,7 @@
         status: walk.status,
         startedAt: walk.startedAt,
         endedAt: walk.endedAt,
+        completedAt: walk.completedAt,
         issueIds
       });
     });
@@ -218,7 +232,15 @@
         id: issue.id,
         walkId: issue.walkId,
         time: issue.time,
+        observedAt: issue.observedAt,
         observation: issue.observation,
+        workOrderId: issue.workOrderId,
+        initialPriority: issue.initialPriority || "Planned",
+        syncStatus: issue.syncStatus || "not_queued",
+        syncEventId: issue.syncEventId || null,
+        plannerAcceptedAt: issue.plannerAcceptedAt || null,
+        lastSyncAttemptAt: issue.lastSyncAttemptAt || null,
+        syncError: issue.syncError || null,
         photos: (issue.photoIds || [])
           .map(photoId => photoMap.get(photoId))
           .filter(Boolean)
@@ -231,6 +253,7 @@
         status: walkRecord.status,
         startedAt: walkRecord.startedAt,
         endedAt: walkRecord.endedAt,
+        completedAt: walkRecord.completedAt,
         issues
       };
     });
@@ -309,6 +332,28 @@
     await transactionPromise(transaction);
   }
 
+  async function putSyncEvent(event) {
+    if (!event || !event.eventId) throw new TypeError("Sync event id is required.");
+    const db = await openDatabase();
+    const transaction = db.transaction(STORES.syncEvents, "readwrite");
+    transaction.objectStore(STORES.syncEvents).put(event);
+    await transactionPromise(transaction);
+    return event;
+  }
+
+  async function loadSyncEvents() {
+    const db = await openDatabase();
+    const transaction = db.transaction(STORES.syncEvents, "readonly");
+    return getAllFromStore(transaction.objectStore(STORES.syncEvents));
+  }
+
+  async function getSyncEvent(eventId) {
+    if (!eventId) return null;
+    const db = await openDatabase();
+    const transaction = db.transaction(STORES.syncEvents, "readonly");
+    return promiseFromRequest(transaction.objectStore(STORES.syncEvents).get(eventId));
+  }
+
   global.appStorage = {
     initializeStorage,
     saveWalks,
@@ -316,6 +361,9 @@
     saveDraft,
     loadDraft,
     clearDraft,
+    putSyncEvent,
+    loadSyncEvents,
+    getSyncEvent,
     openDatabase
   };
 })(window);

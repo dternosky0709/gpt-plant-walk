@@ -1,4 +1,5 @@
 const SETTINGS_KEY = "gptPlantWalkSettings";
+const NEXT_WORK_ORDER_SEQUENCE_KEY = "gptPlantWalkNextWorkOrderSequence";
 const SETTINGS_APP_VERSION = "1.0";
 
 const defaultSettings = {
@@ -263,6 +264,18 @@ function applySettings(settings) {
   applyTheme(settings.theme || "light");
   window.gptPlantWalkSettings = settings;
   window.generateWorkOrderNumber = generateWorkOrderNumber;
+  window.allocateWorkOrderNumber = allocateWorkOrderNumber;
+}
+
+function allocateWorkOrderNumber(date = new Date()) {
+  const configuredStart = Math.max(1, Number(appSettings.sequenceStart) || 1);
+  const storedNext = Math.max(configuredStart, Number(localStorage.getItem(NEXT_WORK_ORDER_SEQUENCE_KEY)) || configuredStart);
+  const generated = generateWorkOrderNumber(storedNext, date, appSettings)
+    .replace(/[^A-Z0-9._:-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  if (!generated) throw new Error("The work-order format did not produce a valid ID.");
+  localStorage.setItem(NEXT_WORK_ORDER_SEQUENCE_KEY, String(storedNext + 1));
+  return generated;
 }
 
 function applyTheme(theme) {
