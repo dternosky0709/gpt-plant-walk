@@ -21,6 +21,7 @@ Minimum request identity:
   "sentAt": "2026-08-07T12:30:00Z",
   "source": {
     "application": "plant-walk",
+    "deployment": "production",
     "plantWalkId": "PW-2026-0087",
     "observationId": "OBS-2026-0087-003"
   },
