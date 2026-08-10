@@ -67,7 +67,7 @@ function formatWorkOrderNumber(settings, walk, sequence) {
 function buildPacketIssue(issue, index, walk, settings) {
   const sequence = index + 1;
   const observation = issue.observation || "Photo-only issue. Field verification required.";
-  const workOrderNumber = formatWorkOrderNumber(settings, walk, sequence);
+  const workOrderNumber = issue.workOrderId || issue.workOrderNumber || formatWorkOrderNumber(settings, walk, sequence);
   const photos = Array.isArray(issue.photos)
     ? issue.photos.map((photo, photoIndex) => ({
         url: photo,
@@ -76,7 +76,8 @@ function buildPacketIssue(issue, index, walk, settings) {
     : [];
 
   const allowedPriorities = ["Immediate", "Urgent", "Planned", "Monitor"];
-  const priority = allowedPriorities.includes(issue.priority) ? issue.priority : "Field verification required";
+  const suppliedPriority = issue.initialPriority || issue.priority;
+  const priority = allowedPriorities.includes(suppliedPriority) ? suppliedPriority : "Field verification required";
   const correctiveWork = Array.isArray(issue.correctiveWork)
     ? issue.correctiveWork.filter(Boolean)
     : Array.isArray(issue.repairSteps)
