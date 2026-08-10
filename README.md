@@ -1,21 +1,24 @@
-# GPT Plant Walk 1.0
+# GPT Plant Walk 1.1
 
 A mobile-first Progressive Web App for capturing plant-walk observations and photos and generating professional maintenance packets.
 
 ## Version 1.0 workflow
 
 1. Start a plant walk.
-2. Record and save issues with voice or typed observations and one photo per issue.
+2. Record and save issues with voice or typed observations and one or more photos.
 3. Review saved issues and delete an incorrect issue when needed.
 4. Finish the walk and generate the Maintenance Packet v2.0 PDF.
 5. Return to the clean start screen or reopen a completed walk from Previous Walks.
+6. Queue every completed-walk work order for authenticated Maintenance Planner intake and retry automatically when connectivity returns.
 
 ## Included
 
 - Mobile and installable PWA experience
 - Offline capture and IndexedDB persistence
 - Voice-assisted observations
-- Single-photo issue capture
+- Multiple-photo issue capture
+- Permanent Plant Walk work-order IDs
+- Offline Maintenance Planner outbound queue and visible sync status
 - Saved-issue deletion
 - Previous Walks history
 - Server-side PDFBolt Maintenance Packet generation
