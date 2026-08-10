@@ -4,6 +4,24 @@ All notable changes to GPT Plant Walk will be documented here.
 
 This project follows milestone-based releases. Each release should include the sprint goal, files changed, key fixes, and remaining TODOs.
 
+## v1.1.0 - Maintenance Planner Synchronization Foundation
+
+### Added
+- Permanent Plant Walk work-order IDs assigned when observations are saved.
+- IndexedDB-backed outbound intake event queue with stable retry event IDs.
+- Automatic retry after reconnect and manual retry from the completed-walk screen.
+- Visible pending, failed, and accepted synchronization status.
+- Server-side authenticated proxy to the Maintenance Planner v1 intake endpoint.
+- Automated contract, retry, and proxy validation tests.
+
+### Changed
+- Maintenance packets now use the same permanent work-order IDs sent to Maintenance Planner.
+- Product documentation now reflects Engineering OS Decision 014.
+
+### Remaining
+- Deployment secrets must be configured on the Plant Walk host before live synchronization can succeed.
+- Photo bytes remain device-local; v1 sends durable photo identity metadata only.
+
 ## v0.7.0-alpha1 - Sprint 6 Practical Maintenance Report Format
 
 ### Added
