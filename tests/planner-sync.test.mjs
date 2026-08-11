@@ -38,5 +38,14 @@ assert.deepEqual(
   { total: 3, synced: 1, pending: 1, failed: 1, notQueued: 0 }
 );
 assert.equal(context.plannerSync.nextRetryAt(1, 0), "1970-01-01T00:00:30.000Z");
+assert.equal(
+  context.plannerSync.ensureGlobalWorkOrderId("WO-20260811-001", "12345678-90ab-4def-8123-4567890abcde"),
+  "WO-20260811-001-1234567890AB"
+);
+assert.equal(
+  context.plannerSync.ensureGlobalWorkOrderId("WO-20260811-001-1234567890AB", "12345678-90ab-4def-8123-4567890abcde"),
+  "WO-20260811-001-1234567890AB",
+  "global work-order identity must be stable across retries"
+);
 
 console.log("PASS: Plant Walk creates stable Planner intake payloads and retry state.");
