@@ -4,6 +4,17 @@ All notable changes to GPT Plant Walk will be documented here.
 
 This project follows milestone-based releases. Each release should include the sprint goal, files changed, key fixes, and remaining TODOs.
 
+## v1.1.1 - Cross-device Work-order Identity Repair
+
+### Fixed
+- Work-order IDs now include a stable observation-derived suffix, preventing collisions between phones, installed PWAs, Safari, and desktop browsers.
+- Completed unsynced work orders created by v1.1 are automatically re-keyed and retried without losing their observations or photos.
+- Finish Walk now waits for the first Planner synchronization attempt and displays the actual rejection message when attention is required.
+
+### Compatibility
+- Already accepted work orders keep their original permanent IDs.
+- Retries keep the same event ID and globally unique work-order ID.
+
 ## v1.1.0 - Maintenance Planner Synchronization Foundation
 
 ### Added
