@@ -7,7 +7,7 @@ This repository is the source code for **GPT Plant Walk 1.0**. The package adds 
 - Repository: `dternosky0709/gpt-plant-walk`
 - Default branch: `main`
 - Packaged commit: `12bd03fd04e723383f0b9d0ff28146ce603979e0`
-- App version in source: `1.1.1`
+- App version in source: `1.1.2`
 - Maintenance packet schema: `PlantWalkPacketV2`
 - Walk/AI contract schema: `1.0`
 - Current hosted-AI endpoint behavior: strict validation with mock analysis; no production AI provider call
