@@ -55,12 +55,13 @@ Minimum acceptance response:
 
 1. `eventId` is the idempotency key and must remain unchanged for retries.
 2. `plantWalkObservationId` is stable for the lifetime of the source observation.
-3. `workOrderId` is created by Plant Walk, is permanent, and is never reused.
+3. `workOrderId` is created by Plant Walk, includes an observation-derived uniqueness suffix, is permanent after Planner acceptance, and is never reused across devices or browser storage partitions.
 4. Retrying an accepted event returns the same work-order ID and creates no duplicate.
 5. Plant Walk stores the event in IndexedDB and marks the work order `pending_sync` until it receives acceptance.
 6. Plant Walk is authoritative for identity and source evidence but not for downstream Planner status.
 7. Maintenance Planner stores the source walk ID, observation ID, event ID, contract version, received timestamp, and payload fingerprint.
 8. Updates to an accepted observation require a future explicit amendment contract; v1 never silently overwrites the original observation.
+9. v1.1 legacy IDs are re-keyed only while unsynced; already accepted work orders retain their original ID.
 
 ## Production requirements
 

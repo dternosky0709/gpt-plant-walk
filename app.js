@@ -1,4 +1,4 @@
-const APP_VERSION = "1.1";
+const APP_VERSION = "1.1.1";
 const STORAGE_KEY = "gptPlantWalks";
 const DRAFT_KEY = "gptPlantWalkDraft";
 const ACTIVE_WALK_KEY = "gptPlantWalkActiveWalkId";
@@ -74,6 +74,7 @@ async function initializeApp() {
 
   const activeWalkId = localStorage.getItem(ACTIVE_WALK_KEY);
   activeWalk = activeWalkId ? walks.find(walk => walk.id === activeWalkId && walk.status !== "completed") || null : null;
+  await migrateUnsyncedWorkOrderIds();
   await reconcileCompletedWalkQueues();
   await restoreInterruptedWalk();
   renderIssues();
@@ -262,11 +263,15 @@ async function saveIssue() {
     if (!observation && selectedPhotos.length === 0) return alert("Enter an observation or attach a photo before saving.");
 
     const observedAt = new Date();
-    const workOrderId = typeof window.allocateWorkOrderNumber === "function"
+    const issueId = crypto.randomUUID();
+    const baseWorkOrderId = typeof window.allocateWorkOrderNumber === "function"
       ? window.allocateWorkOrderNumber(observedAt)
       : `WO-${observedAt.getTime()}`;
+    const workOrderId = window.plannerSync && typeof window.plannerSync.ensureGlobalWorkOrderId === "function"
+      ? window.plannerSync.ensureGlobalWorkOrderId(baseWorkOrderId, issueId)
+      : `${baseWorkOrderId}-${issueId.replace(/[^A-Za-z0-9]/g, "").slice(0, 12).toUpperCase()}`;
     activeWalk.issues.push({
-      id: crypto.randomUUID(),
+      id: issueId,
       time: observedAt.toLocaleTimeString(),
       observedAt: observedAt.toISOString(),
       observation,
@@ -406,7 +411,7 @@ async function finishWalk() {
     activeWalk = null;
     persistActiveWalkId();
     activeWalkSection.classList.add("hidden");
-    processPlannerQueue({ force: true }).catch(error => console.error("Planner sync failed.", error));
+    await processPlannerQueue({ force: true, walkId: reportedWalkId });
   } catch (error) {
     console.error("Could not finish walk and queue work orders.", error);
     if (activeWalk) activeWalk.status = "active";
@@ -455,6 +460,53 @@ async function queueWalkForPlanner(walk) {
       acceptedAt: null
     });
   }
+}
+
+async function migrateUnsyncedWorkOrderIds() {
+  if (!window.appStorage || !window.plannerSync || typeof window.plannerSync.ensureGlobalWorkOrderId !== "function") return;
+  const events = typeof window.appStorage.loadSyncEvents === "function" ? await window.appStorage.loadSyncEvents() : [];
+  const eventMap = new Map(events.map(event => [event.eventId, event]));
+  let changed = false;
+
+  for (const walk of walks) {
+    for (const issue of Array.isArray(walk.issues) ? walk.issues : []) {
+      const event = issue.syncEventId ? eventMap.get(issue.syncEventId) : null;
+      if (event && event.status === "accepted") {
+        if (issue.syncStatus !== "synced") {
+          issue.syncStatus = "synced";
+          issue.plannerAcceptedAt = event.acceptedAt || issue.plannerAcceptedAt || null;
+          issue.syncError = null;
+          changed = true;
+        }
+        continue;
+      }
+      if (issue.syncStatus === "synced" || !issue.id || !issue.workOrderId) continue;
+
+      const nextWorkOrderId = window.plannerSync.ensureGlobalWorkOrderId(issue.workOrderId, issue.id);
+      if (nextWorkOrderId === issue.workOrderId) continue;
+      issue.workOrderId = nextWorkOrderId;
+      issue.syncError = null;
+      if (walk.status === "completed") issue.syncStatus = "pending_sync";
+
+      if (event) {
+        const payload = {
+          ...event.payload,
+          workOrder: { ...event.payload.workOrder, id: nextWorkOrderId }
+        };
+        await window.appStorage.putSyncEvent({
+          ...event,
+          workOrderId: nextWorkOrderId,
+          payload,
+          status: "pending",
+          nextAttemptAt: new Date().toISOString(),
+          lastError: null
+        });
+      }
+      changed = true;
+    }
+  }
+
+  if (changed) await persistWalks();
 }
 
 async function reconcileCompletedWalkQueues() {
@@ -548,7 +600,10 @@ function renderPlannerSyncStatus(walk) {
   if (summary.failed > 0) {
     plannerSyncPanel.classList.add("is-failed");
     plannerSyncTitle.textContent = `${summary.failed} work order${summary.failed === 1 ? "" : "s"} need attention`;
-    plannerSyncDetail.textContent = `${summary.synced} of ${summary.total} accepted by Maintenance Planner.`;
+    const failedIssue = (walk.issues || []).find(issue => issue.syncStatus === "sync_failed" && issue.syncError);
+    plannerSyncDetail.textContent = failedIssue
+      ? `${summary.synced} of ${summary.total} accepted. ${failedIssue.syncError}`
+      : `${summary.synced} of ${summary.total} accepted by Maintenance Planner.`;
     retryPlannerSyncBtn.classList.remove("hidden");
     return;
   }

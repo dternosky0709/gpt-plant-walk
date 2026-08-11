@@ -12,6 +12,24 @@
     return `${prefix}-${value}`;
   }
 
+  function uniqueSuffix(value) {
+    const normalized = String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (normalized.length >= 12) return normalized.slice(0, 12);
+    let hash = 2166136261;
+    for (let index = 0; index < normalized.length; index += 1) {
+      hash ^= normalized.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    return `${normalized}${(hash >>> 0).toString(16).toUpperCase().padStart(8, "0")}${normalized}`.slice(0, 12).padEnd(12, "0");
+  }
+
+  function ensureGlobalWorkOrderId(baseWorkOrderId, observationId) {
+    const base = requireText(baseWorkOrderId, "Work-order id").replace(/[^A-Za-z0-9._:-]+/g, "-").replace(/^-+|-+$/g, "");
+    const suffix = uniqueSuffix(requireText(observationId, "Observation id"));
+    if (base.toUpperCase().endsWith(`-${suffix}`)) return base;
+    return `${base.slice(0, 115)}-${suffix}`;
+  }
+
   function requireText(value, label) {
     if (typeof value !== "string" || !value.trim()) throw new TypeError(`${label} is required.`);
     return value.trim();
@@ -76,5 +94,5 @@
     return summary;
   }
 
-  global.plannerSync = Object.freeze({ CONTRACT_VERSION, SYNC_ENDPOINT, buildIntakePayload, nextRetryAt, summarizeWalkSync, titleFromObservation });
+  global.plannerSync = Object.freeze({ CONTRACT_VERSION, SYNC_ENDPOINT, buildIntakePayload, ensureGlobalWorkOrderId, nextRetryAt, summarizeWalkSync, titleFromObservation });
 })(typeof globalThis !== "undefined" ? globalThis : window);

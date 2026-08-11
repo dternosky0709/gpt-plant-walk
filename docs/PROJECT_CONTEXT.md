@@ -36,7 +36,7 @@ The intended field loop is:
 
 ## Current status
 
-The packaged source identifies the app as GPT Plant Walk 1.1 and includes the Maintenance Planner synchronization foundation on top of the Phase 2 endpoint base. Production hosted AI is not active; baseline packet generation remains available without it.
+The source identifies the app as GPT Plant Walk 1.1.1 and includes cross-device work-order identity protection plus the Maintenance Planner synchronization foundation on top of the Phase 2 endpoint base. Production hosted AI is not active; baseline packet generation remains available without it.
 
 Earlier product records described a release-candidate validation gate with critical iPhone/PWA checks still needing completion. Codex should verify the current release-validation evidence rather than assume production approval.
 
