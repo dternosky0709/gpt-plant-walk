@@ -30,6 +30,11 @@
     return `${base.slice(0, 115)}-${suffix}`;
   }
 
+  function displayWorkOrderId(workOrderId) {
+    const value = String(workOrderId || "").trim();
+    return value.replace(/-([A-Z0-9]{12})$/i, "");
+  }
+
   function requireText(value, label) {
     if (typeof value !== "string" || !value.trim()) throw new TypeError(`${label} is required.`);
     return value.trim();
@@ -94,5 +99,5 @@
     return summary;
   }
 
-  global.plannerSync = Object.freeze({ CONTRACT_VERSION, SYNC_ENDPOINT, buildIntakePayload, ensureGlobalWorkOrderId, nextRetryAt, summarizeWalkSync, titleFromObservation });
+  global.plannerSync = Object.freeze({ CONTRACT_VERSION, SYNC_ENDPOINT, buildIntakePayload, displayWorkOrderId, ensureGlobalWorkOrderId, nextRetryAt, summarizeWalkSync, titleFromObservation });
 })(typeof globalThis !== "undefined" ? globalThis : window);
