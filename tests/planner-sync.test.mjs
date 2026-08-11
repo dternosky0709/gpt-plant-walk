@@ -47,5 +47,11 @@ assert.equal(
   "WO-20260811-001-1234567890AB",
   "global work-order identity must be stable across retries"
 );
+assert.equal(
+  context.plannerSync.displayWorkOrderId("WO-20260811-001-1234567890AB"),
+  "WO-20260811-001",
+  "the collision-proof suffix must stay hidden from the operator-facing work-order number"
+);
+assert.equal(context.plannerSync.displayWorkOrderId("WO-2026-0142"), "WO-2026-0142");
 
 console.log("PASS: Plant Walk creates stable Planner intake payloads and retry state.");
