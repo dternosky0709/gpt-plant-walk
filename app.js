@@ -1,4 +1,4 @@
-const APP_VERSION = "1.1.1";
+const APP_VERSION = "1.1.2";
 const STORAGE_KEY = "gptPlantWalks";
 const DRAFT_KEY = "gptPlantWalkDraft";
 const ACTIVE_WALK_KEY = "gptPlantWalkActiveWalkId";
@@ -335,7 +335,10 @@ function renderIssues() {
     div.className = "issue";
     const syncLabel = issue.syncStatus === "synced" ? "Synced" : issue.syncStatus === "sync_failed" ? "Sync failed" : issue.syncStatus === "pending_sync" ? "Pending sync" : "Created";
     const syncClass = issue.syncStatus === "synced" ? "synced" : issue.syncStatus === "sync_failed" ? "failed" : "pending";
-    div.innerHTML = `<div class="saved-issue-heading"><strong>Issue ${index + 1}</strong><button type="button" class="delete-issue-button" aria-label="Delete Issue ${index + 1}">Delete</button></div><p><strong>Work Order:</strong> ${escapeHtml(issue.workOrderId || "Assigned when saved")}</p><p><strong>Time:</strong> ${escapeHtml(issue.time)}</p><p>${escapeHtml(issue.observation || "Photo-only issue")}</p><p><strong>Photos:</strong> ${issue.photos.length}</p><span class="sync-status ${syncClass}">${syncLabel}</span><div class="photo-grid"></div>`;
+    const displayedWorkOrderId = window.plannerSync && typeof window.plannerSync.displayWorkOrderId === "function"
+      ? window.plannerSync.displayWorkOrderId(issue.workOrderId)
+      : issue.workOrderId;
+    div.innerHTML = `<div class="saved-issue-heading"><strong>Issue ${index + 1}</strong><button type="button" class="delete-issue-button" aria-label="Delete Issue ${index + 1}">Delete</button></div><p><strong>Work Order:</strong> ${escapeHtml(displayedWorkOrderId || "Assigned when saved")}</p><p><strong>Time:</strong> ${escapeHtml(issue.time)}</p><p>${escapeHtml(issue.observation || "Photo-only issue")}</p><p><strong>Photos:</strong> ${issue.photos.length}</p><span class="sync-status ${syncClass}">${syncLabel}</span><div class="photo-grid"></div>`;
     const deleteButton = div.querySelector(".delete-issue-button");
     deleteButton.disabled = deletingIssueId !== null;
     deleteButton.addEventListener("click", () => deleteIssue(issue.id, index + 1));
