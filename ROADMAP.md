@@ -1,8 +1,8 @@
 # GPT Plant Walk Roadmap
 
-## GPT Plant Walk 1.1.1
+## GPT Plant Walk 1.1.2
 
-Version 1.1.1 provides the stable field workflow plus the Maintenance Planner synchronization foundation: every completed-walk observation has a globally unique Plant Walk work-order ID, is stored in a durable IndexedDB outbound queue, and is retried through the authenticated server boundary until Planner acceptance. Unsynced v1.1 IDs are migrated safely to prevent cross-device collisions.
+Version 1.1.2 provides the stable field workflow plus the Maintenance Planner synchronization foundation: every completed-walk observation has a globally unique internal Plant Walk work-order ID, while operators and PDFs see the clean configured work-order number. Events are stored in a durable IndexedDB outbound queue and retried through the authenticated server boundary until Planner acceptance. Unsynced v1.1 IDs are migrated safely to prevent cross-device collisions.
 
 Release hardening and field validation take priority over feature expansion.
 
