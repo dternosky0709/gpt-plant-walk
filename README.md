@@ -1,4 +1,4 @@
-# GPT Plant Walk 1.1
+# GPT Plant Walk 1.1.1
 
 A mobile-first Progressive Web App for capturing plant-walk observations and photos and generating professional maintenance packets.
 
@@ -17,7 +17,7 @@ A mobile-first Progressive Web App for capturing plant-walk observations and pho
 - Offline capture and IndexedDB persistence
 - Voice-assisted observations
 - Multiple-photo issue capture
-- Permanent Plant Walk work-order IDs
+- Globally unique Plant Walk work-order IDs across phones, Safari, installed PWAs, and desktop browsers
 - Offline Maintenance Planner outbound queue and visible sync status
 - Saved-issue deletion
 - Previous Walks history
