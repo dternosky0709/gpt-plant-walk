@@ -4,6 +4,13 @@ All notable changes to GPT Plant Walk will be documented here.
 
 This project follows milestone-based releases. Each release should include the sprint goal, files changed, key fixes, and remaining TODOs.
 
+## v1.1.2 - Clean Work-order Display
+
+### Changed
+- Plant Walk and generated maintenance packets show the clean configured work-order number without the observation-derived uniqueness suffix.
+- The globally unique permanent ID remains stored and synchronized internally, preserving collision protection and idempotent retries.
+- Previously accepted v1.1.1 work orders display cleanly without changing their stored identity or Planner history.
+
 ## v1.1.1 - Cross-device Work-order Identity Repair
 
 ### Fixed
