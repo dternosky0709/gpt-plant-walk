@@ -67,7 +67,10 @@ function formatWorkOrderNumber(settings, walk, sequence) {
 function buildPacketIssue(issue, index, walk, settings) {
   const sequence = index + 1;
   const observation = issue.observation || "Photo-only issue. Field verification required.";
-  const workOrderNumber = issue.workOrderId || issue.workOrderNumber || formatWorkOrderNumber(settings, walk, sequence);
+  const permanentWorkOrderId = issue.workOrderId || issue.workOrderNumber;
+  const workOrderNumber = permanentWorkOrderId && window.plannerSync && typeof window.plannerSync.displayWorkOrderId === "function"
+    ? window.plannerSync.displayWorkOrderId(permanentWorkOrderId)
+    : permanentWorkOrderId || formatWorkOrderNumber(settings, walk, sequence);
   const photos = Array.isArray(issue.photos)
     ? issue.photos.map((photo, photoIndex) => ({
         url: photo,
