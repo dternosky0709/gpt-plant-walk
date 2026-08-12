@@ -1,11 +1,11 @@
 {
-  "name": "GPT Plant Walk 1.1.2",
+  "name": "GPT Plant Walk 1.2.0",
   "short_name": "Plant Walk",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#eef2ee",
-  "theme_color": "#173826",
+  "background_color": "#0b0d0c",
+  "theme_color": "#0b0d0c",
   "description": "Field maintenance capture with professional maintenance packet generation.",
   "icons": [
     {

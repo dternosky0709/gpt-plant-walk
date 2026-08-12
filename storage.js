@@ -354,6 +354,16 @@
     return promiseFromRequest(transaction.objectStore(STORES.syncEvents).get(eventId));
   }
 
+  async function deleteSyncEventsForWalk(walkId) {
+    if (!walkId) return;
+    const db = await openDatabase();
+    const transaction = db.transaction(STORES.syncEvents, "readwrite");
+    const store = transaction.objectStore(STORES.syncEvents);
+    const events = await getAllFromStore(store);
+    events.filter(event => event.walkId === walkId).forEach(event => store.delete(event.eventId));
+    await transactionPromise(transaction);
+  }
+
   global.appStorage = {
     initializeStorage,
     saveWalks,
@@ -364,6 +374,7 @@
     putSyncEvent,
     loadSyncEvents,
     getSyncEvent,
+    deleteSyncEventsForWalk,
     openDatabase
   };
 })(window);

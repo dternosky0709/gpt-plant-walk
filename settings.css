@@ -47,6 +47,41 @@
   margin: 0 auto;
 }
 
+/* v1.2.0 industrial settings */
+:root[data-theme="dark"] .app-header { background: rgba(9, 11, 10, 0.97); }
+:root[data-theme="dark"] .settings-page,
+:root[data-theme="dark"] .settings-group,
+:root[data-theme="dark"] .preview-card,
+:root[data-theme="dark"] .choice-row,
+:root[data-theme="dark"] .template-option,
+:root[data-theme="dark"] .custom-builder,
+:root[data-theme="dark"] .logo-preview-card {
+  background: linear-gradient(145deg, #181b1a, #121413);
+  border-color: #414643;
+  border-radius: 5px;
+}
+:root[data-theme="dark"] .settings-heading h2,
+:root[data-theme="dark"] .settings-group h3 { color: #f2f4f2; }
+:root[data-theme="dark"] .settings-kicker { color: var(--amber); font-size: 13px; }
+:root[data-theme="dark"] .template-option small,
+:root[data-theme="dark"] .choice-row small,
+:root[data-theme="dark"] .preview-card span { color: #b7bdb9; font-size: 14px; line-height: 1.4; }
+:root[data-theme="dark"] .template-option:has(input:checked),
+:root[data-theme="dark"] .choice-row:has(input:checked) {
+  border-color: var(--green);
+  box-shadow: inset 4px 0 0 var(--green);
+}
+:root[data-theme="dark"] .token-button {
+  min-height: 42px;
+  border: 1px solid #5a605c;
+  border-radius: 4px;
+  background: #303431;
+  color: #fff;
+  box-shadow: none;
+  font-size: 14px;
+}
+.history-settings-group { border-left: 4px solid var(--amber) !important; }
+
 .icon-button {
   width: 46px;
   height: 46px;

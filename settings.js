@@ -10,7 +10,8 @@ const defaultSettings = {
   workOrderTemplate: "WO-{DATE}-{SEQ}",
   sequenceStart: 1,
   sequenceDigits: 3,
-  theme: "light"
+  theme: "dark",
+  industrialThemeVersion: 1
 };
 
 const settingsBtn = document.getElementById("settingsBtn");
@@ -30,6 +31,8 @@ const sequenceStartInput = document.getElementById("sequenceStartInput");
 const sequenceDigitsInput = document.getElementById("sequenceDigitsInput");
 const workOrderPreview = document.getElementById("workOrderPreview");
 const settingsSavedMessage = document.getElementById("settingsSavedMessage");
+const openHistoryBtn = document.getElementById("openHistoryBtn");
+const settingsNavButton = document.getElementById("settingsNavBtn");
 
 let pendingLogo = "";
 let appSettings = loadSettings();
@@ -38,7 +41,9 @@ populateSettingsForm(appSettings);
 updateWorkOrderPreview();
 
 settingsBtn.addEventListener("click", openSettings);
+settingsNavButton.addEventListener("click", openSettings);
 closeSettingsBtn.addEventListener("click", closeSettings);
+openHistoryBtn.addEventListener("click", openWalkHistory);
 settingsForm.addEventListener("submit", saveSettings);
 companyLogoInput.addEventListener("change", handleLogoUpload);
 removeLogoBtn.addEventListener("click", removeLogo);
@@ -62,6 +67,12 @@ function loadSettings() {
   try {
     const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY));
     const merged = { ...defaultSettings, ...(saved || {}) };
+
+    if (!merged.industrialThemeVersion) {
+      merged.theme = "dark";
+      merged.industrialThemeVersion = 1;
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(merged));
+    }
 
     if (merged.plantCode && merged.workOrderFormat.includes("{PLANT}")) {
       merged.workOrderFormat = merged.workOrderFormat.replaceAll("{PLANT}", sanitizeText(merged.plantCode));
@@ -107,14 +118,21 @@ function openSettings() {
   settingsSavedMessage.classList.add("hidden");
   populateSettingsForm(appSettings);
   updateWorkOrderPreview();
+  if (typeof window.setPlantWalkNavigation === "function") window.setPlantWalkNavigation("settings");
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function closeSettings() {
   settingsSection.classList.add("hidden");
   dashboardSection.classList.remove("hidden");
-  applyTheme(appSettings.theme || "light");
+  applyTheme(appSettings.theme || "dark");
+  if (typeof window.setPlantWalkNavigation === "function") window.setPlantWalkNavigation("home");
   window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function openWalkHistory() {
+  closeSettings();
+  if (typeof window.renderWalkHistory === "function") window.renderWalkHistory();
 }
 
 function handleTemplateChange(event) {
@@ -242,7 +260,8 @@ function saveSettings(event) {
     workOrderTemplate: selectedTemplate ? selectedTemplate.value : "custom",
     sequenceStart: Math.max(1, Number(sequenceStartInput.value) || 1),
     sequenceDigits: Number(sequenceDigitsInput.value) || 3,
-    theme: selectedTheme ? selectedTheme.value : "light"
+    theme: selectedTheme ? selectedTheme.value : "dark",
+    industrialThemeVersion: 1
   };
 
   try {
@@ -261,7 +280,7 @@ function saveSettings(event) {
 }
 
 function applySettings(settings) {
-  applyTheme(settings.theme || "light");
+  applyTheme(settings.theme || "dark");
   window.gptPlantWalkSettings = settings;
   window.generateWorkOrderNumber = generateWorkOrderNumber;
   window.allocateWorkOrderNumber = allocateWorkOrderNumber;
@@ -280,7 +299,7 @@ function allocateWorkOrderNumber(date = new Date()) {
 
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme === "dark" ? "dark" : "light";
-  const themeColor = theme === "dark" ? "#101713" : "#173826";
+  const themeColor = theme === "dark" ? "#0b0d0c" : "#173826";
   const metaTheme = document.querySelector('meta[name="theme-color"]');
   if (metaTheme) metaTheme.setAttribute("content", themeColor);
 }

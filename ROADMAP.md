@@ -1,8 +1,8 @@
 # GPT Plant Walk Roadmap
 
-## GPT Plant Walk 1.1.2
+## GPT Plant Walk 1.2.0
 
-Version 1.1.2 provides the stable field workflow plus the Maintenance Planner synchronization foundation: every completed-walk observation has a globally unique internal Plant Walk work-order ID, while operators and PDFs see the clean configured work-order number. Events are stored in a durable IndexedDB outbound queue and retried through the authenticated server boundary until Planner acceptance. Unsynced v1.1 IDs are migrated safely to prevent cross-device collisions.
+Version 1.2.0 preserves the stable field workflow and Planner synchronization foundation while adding the approved dark industrial interface, persistent Home/Settings navigation, and Settings-based Walk History. Completed-walk history now shows the recorded items and supports confirmed local deletion without deleting accepted Planner work orders.
 
 Release hardening and field validation take priority over feature expansion.
 

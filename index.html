@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GPT Plant Walk 1.1.2</title>
+  <title>GPT Plant Walk 1.2.0</title>
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="styles.css?v=1.1.2" />
-  <link rel="stylesheet" href="settings.css?v=1.0" />
-  <meta name="theme-color" content="#173826" />
+  <link rel="stylesheet" href="styles.css?v=1.2.0" />
+  <link rel="stylesheet" href="settings.css?v=1.2.0" />
+  <meta name="theme-color" content="#0b0d0c" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Plant Walk" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -16,21 +16,40 @@
 <body>
   <header class="app-header no-print">
     <div class="header-row">
-      <div>
-        <h1>GPT Plant Walk 1.1.2</h1>
-        <p>Fast field capture and professional maintenance packets.</p>
+      <div class="brand-lockup">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <div>
+          <p class="app-eyebrow">GPT FIELD SYSTEMS</p>
+          <h1>PLANT WALK</h1>
+        </div>
       </div>
-      <button id="settingsBtn" class="icon-button" type="button" aria-label="Open Settings">⚙︎</button>
+      <button id="settingsBtn" class="icon-button" type="button" aria-label="Open Settings">⚙</button>
     </div>
+    <div class="system-status" role="status"><span aria-hidden="true"></span>SYSTEM READY</div>
   </header>
 
   <main>
     <section id="dashboardSection">
-      <section class="card no-print hero-card">
-        <h2>Plant Walk</h2>
-        <p>Capture observations and photos, then generate a maintenance packet.</p>
-        <button id="startWalkBtn">Start Plant Walk</button>
-        <button id="viewWalksBtn" class="secondary">Previous Walks</button>
+      <section id="homeSection" class="no-print home-screen">
+        <section class="card hero-card industrial-frame">
+          <div class="hero-icon" aria-hidden="true">✓</div>
+          <p class="section-kicker">FIELD CAPTURE</p>
+          <h2>Ready for your next walk</h2>
+          <p>Capture observations, photos, and maintenance issues as you move through the plant.</p>
+          <button id="startWalkBtn">START PLANT WALK</button>
+          <button id="resumeWalkBtn" class="secondary hidden">RESUME CURRENT WALK</button>
+        </section>
+
+        <section class="card current-walk-card industrial-frame">
+          <p class="section-kicker amber">CURRENT WALK</p>
+          <div class="current-walk-row">
+            <div>
+              <h3 id="currentWalkTitle">No active walk</h3>
+              <p id="currentWalkDetail" class="muted">Start a walk when you are ready.</p>
+            </div>
+            <span class="clipboard-icon" aria-hidden="true">▤</span>
+          </div>
+        </section>
       </section>
 
       <section id="activeWalkSection" class="card hidden no-print">
@@ -62,8 +81,10 @@
         <div id="issueList"></div>
       </section>
 
-      <section id="previousWalksSection" class="card hidden no-print">
-        <h2>Previous Walks</h2>
+      <section id="previousWalksSection" class="card hidden no-print history-page">
+        <p class="section-kicker amber">SETTINGS / HISTORY</p>
+        <h2>Walk History</h2>
+        <p class="muted">Review completed walks and their saved maintenance observations.</p>
         <div id="walkList"></div>
       </section>
 
@@ -95,6 +116,12 @@
       </div>
 
       <form id="settingsForm">
+        <div class="settings-group history-settings-group">
+          <h3>Walk History</h3>
+          <p class="muted section-intro">Review completed plant walks and their recorded observations.</p>
+          <button id="openHistoryBtn" type="button" class="secondary">OPEN WALK HISTORY</button>
+        </div>
+
         <div class="settings-group">
           <h3>Company</h3>
           <label for="companyNameInput">Company Name</label>
@@ -162,13 +189,13 @@
 
         <div class="settings-group">
           <h3>Appearance</h3>
-          <label class="choice-row"><input type="radio" name="theme" value="light" checked /><span><strong>Light Mode</strong><small>Bright background for normal use</small></span></label>
-          <label class="choice-row"><input type="radio" name="theme" value="dark" /><span><strong>Dark Mode</strong><small>Reduced glare in low-light areas</small></span></label>
+          <label class="choice-row"><input type="radio" name="theme" value="dark" checked /><span><strong>Industrial Dark</strong><small>Black, graphite, and steel-gray interface</small></span></label>
+          <label class="choice-row"><input type="radio" name="theme" value="light" /><span><strong>Light Mode</strong><small>Bright background for high-light areas</small></span></label>
         </div>
 
         <div class="settings-group">
           <h3>About</h3>
-          <div class="about-row"><span>App Version</span><strong>1.1.2</strong></div>
+          <div class="about-row"><span>App Version</span><strong>1.2.0</strong></div>
           <div class="about-row"><span>Maintenance Packet</span><strong>v2.0</strong></div>
           <div class="about-row"><span>Storage</span><strong>Local / IndexedDB</strong></div>
         </div>
@@ -179,10 +206,15 @@
     </section>
   </main>
 
-  <footer class="no-print"><p id="appVersionText">GPT Plant Walk 1.1.2</p></footer>
+  <nav class="bottom-nav no-print" aria-label="Primary navigation">
+    <button id="homeNavBtn" class="nav-button is-active" type="button" aria-label="Go to Home"><span aria-hidden="true">⌂</span>Home</button>
+    <button id="settingsNavBtn" class="nav-button" type="button" aria-label="Open Settings"><span aria-hidden="true">⚙</span>Settings</button>
+  </nav>
 
-  <script src="storage.js?v=1.1.2"></script>
-  <script src="planner-sync.js?v=1.1.2"></script>
+  <footer class="no-print"><p id="appVersionText">GPT Plant Walk 1.2.0</p></footer>
+
+  <script src="storage.js?v=1.2.0"></script>
+  <script src="planner-sync.js?v=1.2.0"></script>
   <script src="ai-config.js?v=1.0"></script>
   <script src="walk-contract.js?v=1.0"></script>
   <script src="prompt-builder.js?v=1.0"></script>
@@ -190,8 +222,8 @@
   <script src="ai-service.js?v=1.0"></script>
   <script src="issue-deletion.js?v=1.0"></script>
   <script src="walk-reset.js?v=1.0"></script>
-  <script src="app.js?v=1.1.2"></script>
-  <script src="settings.js?v=1.0"></script>
+  <script src="app.js?v=1.2.0"></script>
+  <script src="settings.js?v=1.2.0"></script>
   <script src="pdfbolt.js?v=1.0"></script>
 </body>
 </html>

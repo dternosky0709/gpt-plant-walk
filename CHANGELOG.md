@@ -4,6 +4,24 @@ All notable changes to GPT Plant Walk will be documented here.
 
 This project follows milestone-based releases. Each release should include the sprint goal, files changed, key fixes, and remaining TODOs.
 
+## v1.2.0 - Industrial Interface and Walk History
+
+### Added
+- Dark industrial visual system aligned with Maintenance Planner.
+- Persistent Home and Settings navigation throughout the application.
+- Resume Current Walk status and action on the home screen.
+- Settings-based Walk History with detailed recorded-item summaries.
+- Confirmed local deletion for completed walks.
+- Service-worker update detection that reloads once when a new app version takes control.
+
+### Changed
+- Removed Previous Walks from the main screen and renamed it Walk History.
+- Made enabled buttons solid and high-contrast so they no longer appear unavailable.
+- Preserved IndexedDB walks, photos, drafts, and Planner synchronization data during the interface update.
+
+### Deferred
+- AI-written Walk History descriptions remain dependent on the production AI analysis service; this release shows the complete recorded observations without pretending they are AI-generated.
+
 ## v1.1.2 - Clean Work-order Display
 
 ### Changed

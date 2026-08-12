@@ -1,4 +1,4 @@
-const CACHE_NAME = "gpt-plant-walk-1.1.2";
+const CACHE_NAME = "gpt-plant-walk-1.2.0";
 
 const FILES_TO_CACHE = [
   "./",

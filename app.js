@@ -1,4 +1,4 @@
-const APP_VERSION = "1.1.2";
+const APP_VERSION = "1.2.0";
 const STORAGE_KEY = "gptPlantWalks";
 const DRAFT_KEY = "gptPlantWalkDraft";
 const ACTIVE_WALK_KEY = "gptPlantWalkActiveWalkId";
@@ -16,7 +16,10 @@ let plannerSyncInProgress = false;
 
 const $ = id => document.getElementById(id);
 const startWalkBtn = $("startWalkBtn");
-const viewWalksBtn = $("viewWalksBtn");
+const resumeWalkBtn = $("resumeWalkBtn");
+const homeSection = $("homeSection");
+const currentWalkTitle = $("currentWalkTitle");
+const currentWalkDetail = $("currentWalkDetail");
 const activeWalkSection = $("activeWalkSection");
 const previousWalksSection = $("previousWalksSection");
 const reportSection = $("reportSection");
@@ -37,9 +40,12 @@ const plannerSyncPanel = $("plannerSyncPanel");
 const plannerSyncTitle = $("plannerSyncTitle");
 const plannerSyncDetail = $("plannerSyncDetail");
 const retryPlannerSyncBtn = $("retryPlannerSyncBtn");
+const homeNavBtn = $("homeNavBtn");
+const settingsNavBtn = $("settingsNavBtn");
 
 startWalkBtn.addEventListener("click", startWalk);
-viewWalksBtn.addEventListener("click", renderPreviousWalks);
+resumeWalkBtn.addEventListener("click", resumeCurrentWalk);
+homeNavBtn.addEventListener("click", handleHomeNavigation);
 saveIssueBtn.addEventListener("click", saveIssue);
 finishWalkBtn.addEventListener("click", finishWalk);
 backToStartBtn.addEventListener("click", () => returnToStart());
@@ -51,7 +57,7 @@ photoInput.addEventListener("change", handleSelectedPhotos);
 
 if (appVersionText) appVersionText.textContent = `GPT Plant Walk ${APP_VERSION}`;
 updateSaveIssueButtonState();
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+registerServiceWorker();
 initializeApp();
 window.addEventListener("online", () => processPlannerQueue());
 window.addEventListener("popstate", event => {
@@ -78,6 +84,7 @@ async function initializeApp() {
   await reconcileCompletedWalkQueues();
   await restoreInterruptedWalk();
   renderIssues();
+  updateHomeStatus();
   processPlannerQueue().catch(error => console.error("Could not process Planner queue.", error));
   if (!history.state || !history.state.plantWalkView) history.replaceState({ plantWalkView: "start" }, "");
 }
@@ -166,21 +173,24 @@ async function restoreInterruptedWalk() {
     if (window.appStorage && typeof window.appStorage.clearDraft === "function") await window.appStorage.clearDraft(null).catch(() => {});
     return;
   }
-  activeWalkSection.classList.remove("hidden");
+  activeWalkSection.classList.add("hidden");
   previousWalksSection.classList.add("hidden");
   reportSection.classList.add("hidden");
   walkStartedText.textContent = `Started: ${activeWalk.startedAt}`;
   await restoreDraftForActiveWalk();
+  updateHomeStatus();
 }
 
 function startWalk() {
   if (activeWalk && activeWalk.status !== "completed") {
     if (confirm("A plant walk is already active. Continue that walk instead of starting a new one?")) {
+      homeSection.classList.add("hidden");
       activeWalkSection.classList.remove("hidden");
       previousWalksSection.classList.add("hidden");
       reportSection.classList.add("hidden");
       walkStartedText.textContent = `Started: ${activeWalk.startedAt}`;
       renderIssues();
+      updateHomeStatus();
       return;
     }
     activeWalk.status = "completed";
@@ -192,11 +202,34 @@ function startWalk() {
   walks.unshift(activeWalk);
   persistWalks();
   persistActiveWalkId();
+  homeSection.classList.add("hidden");
   activeWalkSection.classList.remove("hidden");
   previousWalksSection.classList.add("hidden");
   reportSection.classList.add("hidden");
   walkStartedText.textContent = `Started: ${activeWalk.startedAt}`;
   renderIssues();
+  updateHomeStatus();
+}
+
+function resumeCurrentWalk() {
+  if (!activeWalk || activeWalk.status === "completed") return;
+  homeSection.classList.add("hidden");
+  activeWalkSection.classList.remove("hidden");
+  previousWalksSection.classList.add("hidden");
+  reportSection.classList.add("hidden");
+  walkStartedText.textContent = `Started: ${activeWalk.startedAt}`;
+  renderIssues();
+  setActiveNavigation("home");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function updateHomeStatus() {
+  const hasActiveWalk = Boolean(activeWalk && activeWalk.status !== "completed");
+  resumeWalkBtn.classList.toggle("hidden", !hasActiveWalk);
+  currentWalkTitle.textContent = hasActiveWalk ? "Walk in progress" : "No active walk";
+  currentWalkDetail.textContent = hasActiveWalk
+    ? `${activeWalk.issues.length} ${activeWalk.issues.length === 1 ? "issue" : "issues"} saved · Started ${activeWalk.startedAt}`
+    : "Start a walk when you are ready.";
 }
 
 async function handleSelectedPhotos() {
@@ -379,23 +412,54 @@ async function deleteIssue(issueId, issueNumber) {
 }
 
 function renderPreviousWalks() {
+  homeSection.classList.add("hidden");
   previousWalksSection.classList.remove("hidden");
   activeWalkSection.classList.add("hidden");
   reportSection.classList.add("hidden");
   walkList.innerHTML = "";
-  if (walks.length === 0) {
+  const completedWalks = walks.filter(walk => walk.status === "completed");
+  if (completedWalks.length === 0) {
     walkList.innerHTML = '<p class="muted">No previous walks yet.</p>';
     return;
   }
-  walks.forEach(walk => {
+  completedWalks.forEach(walk => {
     const div = document.createElement("div");
     div.className = "walk";
     const sync = window.plannerSync ? window.plannerSync.summarizeWalkSync(walk) : { synced: 0, pending: 0, failed: 0 };
     const syncText = sync.failed ? `${sync.failed} failed` : sync.pending ? `${sync.pending} pending` : sync.synced ? `${sync.synced} synced` : "Not sent";
-    div.innerHTML = `<strong>Plant Walk</strong><p><strong>Started:</strong> ${escapeHtml(walk.startedAt)}</p><p><strong>Status:</strong> ${escapeHtml(walk.status || "completed")}</p><p><strong>Total Issues:</strong> ${walk.issues.length}</p><p><strong>Planner:</strong> ${escapeHtml(syncText)}</p><button data-id="${walk.id}">Open Walk</button>`;
-    div.querySelector("button").addEventListener("click", () => generateReport(walk.id));
+    const observations = (walk.issues || []).map((issue, index) => `<li><strong>Issue ${index + 1}:</strong> ${escapeHtml(issue.observation || "Photo-only issue")}</li>`).join("");
+    div.innerHTML = `<div class="history-card-heading"><strong>Plant Walk</strong><span>${walk.issues.length} ${walk.issues.length === 1 ? "issue" : "issues"}</span></div><p><strong>Started:</strong> ${escapeHtml(walk.startedAt)}</p><p><strong>Completed:</strong> ${escapeHtml(walk.endedAt || "Field verification required")}</p><p><strong>Planner:</strong> ${escapeHtml(syncText)}</p><div class="walk-observation-summary"><strong>Items recorded</strong><ol>${observations || "<li>No observations recorded.</li>"}</ol></div><div class="history-actions"><button type="button" data-action="open" data-id="${walk.id}">OPEN WALK</button><button type="button" class="danger" data-action="delete" data-id="${walk.id}">DELETE WALK</button></div>`;
+    div.querySelector('[data-action="open"]').addEventListener("click", () => generateReport(walk.id));
+    div.querySelector('[data-action="delete"]').addEventListener("click", () => deleteCompletedWalk(walk.id));
     walkList.appendChild(div);
   });
+}
+
+window.renderWalkHistory = renderPreviousWalks;
+
+async function deleteCompletedWalk(walkId) {
+  const walk = walks.find(item => item.id === walkId && item.status === "completed");
+  if (!walk) return;
+  const confirmed = confirm(`Delete this completed walk and its ${walk.issues.length} saved ${walk.issues.length === 1 ? "issue" : "issues"} from this phone? Work orders already sent to Maintenance Planner will remain there.`);
+  if (!confirmed) return;
+  const originalWalks = walks;
+  walks = walks.filter(item => item.id !== walkId);
+  try {
+    await persistWalks();
+  } catch (error) {
+    walks = originalWalks;
+    console.error("Could not delete completed walk.", error);
+    alert("Unable to delete this walk. Nothing was removed.");
+    return;
+  }
+  try {
+    if (window.appStorage && typeof window.appStorage.deleteSyncEventsForWalk === "function") {
+      await window.appStorage.deleteSyncEventsForWalk(walkId);
+    }
+  } catch (error) {
+    console.error("Could not clean up deleted walk synchronization records.", error);
+  }
+  renderPreviousWalks();
 }
 
 async function finishWalk() {
@@ -429,6 +493,7 @@ function generateReport(walkId) {
   if (!walk) return;
   reportedWalkId = walk.id;
   renderPlannerSyncStatus(walk);
+  homeSection.classList.add("hidden");
   reportSection.classList.remove("hidden");
   previousWalksSection.classList.add("hidden");
   if (!history.state || history.state.plantWalkView !== "report" || history.state.walkId !== walk.id) {
@@ -658,11 +723,14 @@ async function returnToStart({ updateHistory = true } = {}) {
         renderIssues();
       },
       showStart: () => {
+        homeSection.classList.remove("hidden");
         activeWalkSection.classList.add("hidden");
         previousWalksSection.classList.add("hidden");
         reportSection.classList.add("hidden");
         window.scrollTo({ top: 0, behavior: "smooth" });
         window.dispatchEvent(new CustomEvent("plantwalk:return-to-start"));
+        updateHomeStatus();
+        setActiveNavigation("home");
       }
     });
     if (updateHistory) history.replaceState({ plantWalkView: "start" }, "");
@@ -672,6 +740,47 @@ async function returnToStart({ updateHistory = true } = {}) {
   } finally {
     backToStartBtn.disabled = false;
   }
+}
+
+function handleHomeNavigation() {
+  const reportIsOpen = !reportSection.classList.contains("hidden");
+  if (reportIsOpen && reportedWalkId) {
+    returnToStart();
+    return;
+  }
+
+  const appSettingsSection = $("settingsSection");
+  const appDashboardSection = $("dashboardSection");
+  if (appSettingsSection) appSettingsSection.classList.add("hidden");
+  if (appDashboardSection) appDashboardSection.classList.remove("hidden");
+  homeSection.classList.remove("hidden");
+  activeWalkSection.classList.add("hidden");
+  previousWalksSection.classList.add("hidden");
+  reportSection.classList.add("hidden");
+  updateHomeStatus();
+  setActiveNavigation("home");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function setActiveNavigation(view) {
+  homeNavBtn.classList.toggle("is-active", view === "home");
+  settingsNavBtn.classList.toggle("is-active", view === "settings");
+}
+
+window.setPlantWalkNavigation = setActiveNavigation;
+
+function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (refreshing || sessionStorage.getItem("plantWalkUpdateReloaded") === APP_VERSION) return;
+    refreshing = true;
+    sessionStorage.setItem("plantWalkUpdateReloaded", APP_VERSION);
+    window.location.reload();
+  });
+  navigator.serviceWorker.register("sw.js", { updateViaCache: "none" })
+    .then(registration => registration.update())
+    .catch(error => console.error("Could not update the offline app.", error));
 }
 
 function focusObservationField() {

@@ -62,7 +62,7 @@ Before calling a release stable, test:
 8. Print / Save PDF
 9. Confirm photos are not cropped
 10. Confirm photos do not split awkwardly across pages
-11. Open Previous Walks
+11. Open Settings → Walk History
 12. Confirm saved walks and photos persist after refresh
 13. Test with the version query string, for example `?v=alpha7`, during active development
 
