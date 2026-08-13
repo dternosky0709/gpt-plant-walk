@@ -1,4 +1,4 @@
-# GPT Plant Walk 1.2.0
+# GPT Plant Walk 1.2.1
 
 A mobile-first Progressive Web App for capturing plant-walk observations and photos and generating professional maintenance packets.
 
@@ -21,12 +21,14 @@ A mobile-first Progressive Web App for capturing plant-walk observations and pho
 - Offline Maintenance Planner outbound queue and visible sync status
 - Saved-issue deletion
 - Settings → Walk History with detailed recorded-item summaries and confirmed whole-walk deletion
+- Automatic server-side AI analysis after a completed walk, with a review-required summary and per-issue priority, trade, and recommendation in Walk History
+- On-demand AI summary generation for walks completed before this release
 - Persistent Home and Settings navigation
 - Dark industrial interface aligned with Maintenance Planner
 - Server-side PDFBolt Maintenance Packet generation
 - Back-to-Start reset that preserves completed history
 
-Hosted AI analysis is intentionally outside the 1.0 release. Missing engineering-analysis fields display “Field verification required.” See `PDFBOLT_SETUP.md` for deployment configuration.
+AI analysis uses a protected server-side OpenAI key and never blocks the baseline maintenance packet when unavailable. Original observations remain the source record, and unknown engineering details display “Field verification required.” See `PDFBOLT_SETUP.md` for packet deployment configuration.
 
 ## iPhone installation
 

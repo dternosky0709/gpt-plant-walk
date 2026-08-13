@@ -1,4 +1,4 @@
-const APP_VERSION = "1.2.0";
+const APP_VERSION = "1.2.1";
 const STORAGE_KEY = "gptPlantWalks";
 const DRAFT_KEY = "gptPlantWalkDraft";
 const ACTIVE_WALK_KEY = "gptPlantWalkActiveWalkId";
@@ -428,9 +428,18 @@ function renderPreviousWalks() {
     const sync = window.plannerSync ? window.plannerSync.summarizeWalkSync(walk) : { synced: 0, pending: 0, failed: 0 };
     const syncText = sync.failed ? `${sync.failed} failed` : sync.pending ? `${sync.pending} pending` : sync.synced ? `${sync.synced} synced` : "Not sent";
     const observations = (walk.issues || []).map((issue, index) => `<li><strong>Issue ${index + 1}:</strong> ${escapeHtml(issue.observation || "Photo-only issue")}</li>`).join("");
-    div.innerHTML = `<div class="history-card-heading"><strong>Plant Walk</strong><span>${walk.issues.length} ${walk.issues.length === 1 ? "issue" : "issues"}</span></div><p><strong>Started:</strong> ${escapeHtml(walk.startedAt)}</p><p><strong>Completed:</strong> ${escapeHtml(walk.endedAt || "Field verification required")}</p><p><strong>Planner:</strong> ${escapeHtml(syncText)}</p><div class="walk-observation-summary"><strong>Items recorded</strong><ol>${observations || "<li>No observations recorded.</li>"}</ol></div><div class="history-actions"><button type="button" data-action="open" data-id="${walk.id}">OPEN WALK</button><button type="button" class="danger" data-action="delete" data-id="${walk.id}">DELETE WALK</button></div>`;
+    const analysis = walk.analysis && walk.analysis.provider === "openai" ? walk.analysis : null;
+    const aiIssueDetails = analysis ? analysis.issues.map(issue => `<li><strong>Issue ${issue.order} · ${escapeHtml(issue.priority)}</strong><span>${escapeHtml(issue.trade)}</span><p>${escapeHtml(issue.recommendation)}</p></li>`).join("") : "";
+    const analysisHtml = analysis
+      ? `<div class="ai-walk-summary"><span>AI-GENERATED · REVIEW REQUIRED</span><p>${escapeHtml(analysis.summary)}</p><details><summary>View issue analysis</summary><ol>${aiIssueDetails}</ol></details></div>`
+      : walk.analysisStatus === "analyzing"
+        ? '<div class="ai-walk-summary is-pending"><span>AI ANALYSIS</span><p>Analysis in progress…</p></div>'
+        : `<div class="ai-walk-summary is-unavailable"><span>AI ANALYSIS</span><p>${escapeHtml(walk.analysisError || "No AI summary has been generated for this walk.")}</p><button type="button" class="secondary compact-button" data-action="analyze" data-id="${walk.id}">GENERATE AI SUMMARY</button></div>`;
+    div.innerHTML = `<div class="history-card-heading"><strong>Plant Walk</strong><span>${walk.issues.length} ${walk.issues.length === 1 ? "issue" : "issues"}</span></div><p><strong>Started:</strong> ${escapeHtml(walk.startedAt)}</p><p><strong>Completed:</strong> ${escapeHtml(walk.endedAt || "Field verification required")}</p><p><strong>Planner:</strong> ${escapeHtml(syncText)}</p>${analysisHtml}<div class="walk-observation-summary"><strong>Items recorded</strong><ol>${observations || "<li>No observations recorded.</li>"}</ol></div><div class="history-actions"><button type="button" data-action="open" data-id="${walk.id}">OPEN WALK</button><button type="button" class="danger" data-action="delete" data-id="${walk.id}">DELETE WALK</button></div>`;
     div.querySelector('[data-action="open"]').addEventListener("click", () => generateReport(walk.id));
     div.querySelector('[data-action="delete"]').addEventListener("click", () => deleteCompletedWalk(walk.id));
+    const analyzeButton = div.querySelector('[data-action="analyze"]');
+    if (analyzeButton) analyzeButton.addEventListener("click", () => analyzeCompletedWalk(walk));
     walkList.appendChild(div);
   });
 }
@@ -479,6 +488,7 @@ async function finishWalk() {
     persistActiveWalkId();
     activeWalkSection.classList.add("hidden");
     await processPlannerQueue({ force: true, walkId: reportedWalkId });
+    await analyzeCompletedWalk(walks.find(walk => walk.id === reportedWalkId));
   } catch (error) {
     console.error("Could not finish walk and queue work orders.", error);
     if (activeWalk) activeWalk.status = "active";
@@ -486,6 +496,44 @@ async function finishWalk() {
   } finally {
     finishWalkBtn.disabled = false;
   }
+}
+
+async function analyzeCompletedWalk(walk) {
+  if (!walk || walk.status !== "completed" || walk.analysisStatus === "analyzing") return;
+  walk.analysisStatus = "analyzing";
+  walk.analysisError = null;
+  await persistWalks();
+  if (!previousWalksSection.classList.contains("hidden")) renderPreviousWalks();
+
+  try {
+    const analysisWalk = {
+      ...walk,
+      site: window.gptPlantWalkSettings && window.gptPlantWalkSettings.plantName || null,
+      issues: (walk.issues || []).map(issue => ({ ...issue, photos: [] }))
+    };
+    const service = window.aiService.createConfiguredAiService({
+      providerMode: "openai-server",
+      model: "gpt-5.6-terra",
+      apiEndpoint: "/api/analyze-walk",
+      requestTimeoutMs: 30000,
+      retryCount: 1,
+      retryPolicy: "fixed",
+      maxOutputTokens: 2048,
+      featureFlags: { photoAnalysis: false }
+    });
+    const analysis = await service.analyzeWalk(analysisWalk);
+    if (analysis.provider !== "openai") throw new Error("Live AI is not available on this deployment.");
+    walk.analysis = JSON.parse(JSON.stringify(analysis));
+    walk.analysisStatus = "completed";
+    walk.analysisCompletedAt = new Date().toISOString();
+  } catch (error) {
+    console.error("AI analysis failed.", error);
+    walk.analysis = null;
+    walk.analysisStatus = "failed";
+    walk.analysisError = "AI summary unavailable. Your original observations remain saved.";
+  }
+  await persistWalks();
+  if (!previousWalksSection.classList.contains("hidden")) renderPreviousWalks();
 }
 
 function generateReport(walkId) {

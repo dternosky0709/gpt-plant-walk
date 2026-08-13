@@ -19,7 +19,7 @@ vm.runInNewContext(serviceSource, context);
 const { DEFAULTS, createAiConfig } = context.globalThis.aiConfig;
 const { createConfiguredAiService } = context.globalThis.aiService;
 
-assert.match(indexSource, /<script src="ai-config\.js\?v=1\.0"><\/script>\s*<script src="walk-contract\.js\?v=1\.0"><\/script>\s*<script src="prompt-builder\.js\?v=1\.0"><\/script>\s*<script src="analysis-contract\.js\?v=1\.0"><\/script>\s*<script src="ai-service\.js\?v=1\.0"><\/script>/,
+assert.match(indexSource, /<script src="ai-config\.js\?v=1\.0"><\/script>\s*<script src="walk-contract\.js\?v=1\.0"><\/script>\s*<script src="prompt-builder\.js\?v=1\.2\.1"><\/script>\s*<script src="analysis-contract\.js\?v=1\.2\.1"><\/script>\s*<script src="ai-service\.js\?v=1\.2\.1"><\/script>/,
   "configuration must load before the AI service");
 assert.match(serviceWorkerSource, /"\.\/ai-config\.js"/, "configuration must remain available offline");
 
@@ -83,7 +83,7 @@ for (const invalid of [
   assert.equal(result.status, "completed");
 }
 
-assert.throws(() => createConfiguredAiService({ providerMode: "live" }), /only mock/i,
-  "future modes must not activate a network runtime path");
+assert.throws(() => createConfiguredAiService({ providerMode: "unsupported" }), /unsupported/i,
+  "unknown modes must not activate a network runtime path");
 
 console.log("PASS: centralized AI configuration defaults, overrides, validation, immutability, and integration.");

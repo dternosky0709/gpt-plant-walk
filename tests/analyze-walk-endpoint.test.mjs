@@ -40,6 +40,36 @@ assert.equal(first.output.provider, "mock-server");
 assert.equal(first.output.issues[0].issueId, "issue-1");
 assert.equal(first.headers["Cache-Control"], "no-store");
 
+{
+  let outbound;
+  const sourceRequest = validRequest();
+  sourceRequest.model = "gpt-5.6-terra";
+  const walk = endpointInternals.validateRequest(sourceRequest);
+  const analysis = await endpointInternals.createOpenAiAnalysis(sourceRequest, walk, {
+    apiKey: "test-key",
+    fetchImpl: async (url, options) => {
+      outbound = { url, options, body: JSON.parse(options.body) };
+      return {
+        ok: true,
+        status: 200,
+        async json() {
+          return { output_text: JSON.stringify({
+            summary: "A seal leak was recorded and requires review.",
+            issues: [{ issueId: "issue-1", order: 1, priority: "Urgent", trade: "Mechanical", recommendation: "Verify the leak source and inspect the seal." }]
+          }) };
+        }
+      };
+    }
+  });
+  assert.equal(outbound.url, "https://api.openai.com/v1/responses");
+  assert.equal(outbound.options.headers.Authorization, "Bearer test-key");
+  assert.equal(outbound.body.store, false);
+  assert.equal(outbound.body.text.format.type, "json_schema");
+  assert.equal(outbound.body.text.format.strict, true);
+  assert.equal(analysis.provider, "openai");
+  assert.equal(analysis.issues[0].priority, "Urgent");
+}
+
 const original = globalThis.analysisContract.validateAnalysisResult;
 const originalConsoleError = console.error;
 console.error = () => {};
@@ -51,4 +81,4 @@ assert.equal(failed.statusCode, 500);
 assert.deepEqual(failed.output, { error: { code: "INTERNAL_ERROR", message: "The analysis request could not be completed." } });
 assert.equal(JSON.stringify(failed.output).includes("private detail"), false);
 
-console.log("PASS: secure mock analysis endpoint validation, deterministic response, limits, and safe errors.");
+console.log("PASS: secure analysis endpoint validation, OpenAI request boundary, structured output, limits, and safe errors.");

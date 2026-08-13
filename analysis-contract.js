@@ -2,7 +2,7 @@
   "use strict";
 
   const SCHEMA_VERSION = "1.0";
-  const PRIORITIES = new Set(["low", "medium", "high", "urgent"]);
+  const PRIORITIES = new Set(["Monitor", "Planned", "Urgent", "Immediate"]);
   const ALLOWED_KEYS = new Set(["schemaVersion", "walkId", "provider", "model", "status", "summary", "issues"]);
   const ISSUE_KEYS = new Set(["issueId", "order", "priority", "trade", "recommendation"]);
 

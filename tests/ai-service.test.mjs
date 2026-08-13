@@ -14,12 +14,12 @@ vm.runInNewContext(promptSource, context);
 vm.runInNewContext(analysisSource, context);
 vm.runInNewContext(source, context);
 
-assert.match(indexSource, /<script src="walk-contract\.js\?v=1\.0"><\/script>\s*<script src="prompt-builder\.js\?v=1\.0"><\/script>\s*<script src="analysis-contract\.js\?v=1\.0"><\/script>\s*<script src="ai-service\.js\?v=1\.0"><\/script>/, "the request and response contracts must load before the AI service layer");
+assert.match(indexSource, /<script src="walk-contract\.js\?v=1\.0"><\/script>\s*<script src="prompt-builder\.js\?v=1\.2\.1"><\/script>\s*<script src="analysis-contract\.js\?v=1\.2\.1"><\/script>\s*<script src="ai-service\.js\?v=1\.2\.1"><\/script>/, "the request and response contracts must load before the AI service layer");
 assert.match(serviceWorkerSource, /"\.\/analysis-contract\.js"/, "the response contract must remain available offline");
 assert.match(serviceWorkerSource, /"\.\/prompt-builder\.js"/, "the prompt builder must remain available offline");
 assert.match(serviceWorkerSource, /"\.\/ai-service\.js"/, "the AI service layer must remain available offline");
 
-const { createAiService, createMockAiProvider } = context.globalThis.aiService;
+const { createAiService, createMockAiProvider, createHttpAiProvider } = context.globalThis.aiService;
 const walk = {
   id: "walk-1",
   issues: [
@@ -31,8 +31,8 @@ const walk = {
 {
   let receivedRequest = null;
   const expected = { schemaVersion: "1.0", walkId: walk.id, provider: "test", model: "test", status: "completed", summary: "Test", issues: [
-    { issueId: "issue-1", order: 1, priority: "high", trade: "Mechanical", recommendation: "Inspect" },
-    { issueId: "issue-2", order: 2, priority: "medium", trade: "Mechanical", recommendation: "Inspect" }
+    { issueId: "issue-1", order: 1, priority: "Urgent", trade: "Mechanical", recommendation: "Inspect" },
+    { issueId: "issue-2", order: 2, priority: "Planned", trade: "Mechanical", recommendation: "Inspect" }
   ] };
   const service = createAiService({
     provider: {
@@ -53,6 +53,21 @@ const walk = {
 
 assert.throws(() => createAiService(), /provider.*analyzeWalk/i);
 assert.throws(() => createAiService({ provider: {} }), /provider.*analyzeWalk/i);
+
+{
+  let outbound;
+  const provider = createHttpAiProvider({
+    endpoint: "/api/analyze-walk",
+    fetchImpl: async (url, options) => {
+      outbound = { url, options };
+      return { ok: true, status: 200, async json() { return expectedAnalysis(walk); } };
+    }
+  });
+  const result = await createAiService({ provider }).analyzeWalk(walk);
+  assert.equal(outbound.url, "/api/analyze-walk");
+  assert.equal(outbound.options.headers["Content-Type"], "application/json");
+  assert.equal(result.status, "completed");
+}
 
 {
   const service = createAiService({ provider: createMockAiProvider() });
@@ -89,8 +104,8 @@ for (const invalidAnalysis of [null, {}, { walkId: walk.id, issues: null }]) {
     order: finding.order,
     priority: finding.priority
   })), [
-    { issueId: "issue-1", order: 1, priority: "high" },
-    { issueId: "issue-2", order: 2, priority: "medium" }
+    { issueId: "issue-1", order: 1, priority: "Planned" },
+    { issueId: "issue-2", order: 2, priority: "Planned" }
   ]);
 }
 
@@ -98,7 +113,7 @@ function expectedAnalysis(sourceWalk) {
   return {
     schemaVersion: "1.0", walkId: sourceWalk.id, provider: "test", model: "test",
     status: "completed", summary: "Test", issues: sourceWalk.issues.map((issue, index) => ({
-      issueId: issue.id, order: index + 1, priority: "medium", trade: "Mechanical", recommendation: "Inspect"
+      issueId: issue.id, order: index + 1, priority: "Planned", trade: "Mechanical", recommendation: "Inspect"
     }))
   };
 }

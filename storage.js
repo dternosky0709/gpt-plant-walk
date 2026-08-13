@@ -196,6 +196,10 @@
         startedAt: walk.startedAt,
         endedAt: walk.endedAt,
         completedAt: walk.completedAt,
+        analysis: walk.analysis ? JSON.parse(JSON.stringify(walk.analysis)) : null,
+        analysisStatus: walk.analysisStatus || "not_requested",
+        analysisError: walk.analysisError || null,
+        analysisCompletedAt: walk.analysisCompletedAt || null,
         issueIds
       });
     });
@@ -254,6 +258,10 @@
         startedAt: walkRecord.startedAt,
         endedAt: walkRecord.endedAt,
         completedAt: walkRecord.completedAt,
+        analysis: walkRecord.analysis || null,
+        analysisStatus: walkRecord.analysisStatus || (walkRecord.analysis ? "completed" : "not_requested"),
+        analysisError: walkRecord.analysisError || null,
+        analysisCompletedAt: walkRecord.analysisCompletedAt || null,
         issues
       };
     });

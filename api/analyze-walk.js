@@ -107,10 +107,92 @@ function createMockAnalysis(request, walk) {
     issues: walk.issues.map(issue => ({
       issueId: issue.issueId,
       order: issue.order,
-      priority: issue.order === 1 ? "high" : "medium",
+      priority: "Planned",
       trade: "Field verification required",
       recommendation: "Field verification required"
     }))
+  };
+}
+
+function analysisSchema() {
+  return {
+    type: "object",
+    additionalProperties: false,
+    required: ["summary", "issues"],
+    properties: {
+      summary: { type: "string" },
+      issues: {
+        type: "array",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["issueId", "order", "priority", "trade", "recommendation"],
+          properties: {
+            issueId: { type: "string" },
+            order: { type: "integer" },
+            priority: { type: "string", enum: ["Immediate", "Urgent", "Planned", "Monitor"] },
+            trade: { type: "string" },
+            recommendation: { type: "string" }
+          }
+        }
+      }
+    }
+  };
+}
+
+function responseText(payload) {
+  if (typeof payload.output_text === "string" && payload.output_text.trim()) return payload.output_text;
+  for (const item of payload.output || []) {
+    for (const content of item.content || []) {
+      if (content.type === "output_text" && typeof content.text === "string") return content.text;
+    }
+  }
+  return null;
+}
+
+async function createOpenAiAnalysis(request, walk, options = {}) {
+  const apiKey = options.apiKey || process.env.OPENAI_API_KEY;
+  const fetchImpl = options.fetchImpl || globalThis.fetch;
+  if (!apiKey || typeof fetchImpl !== "function") throw new Error("OpenAI is not configured.");
+  const model = process.env.OPENAI_MODEL || "gpt-5.6-terra";
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 25000);
+  let providerResponse;
+  try {
+    providerResponse = await fetchImpl("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model,
+        input: request.messages,
+        max_output_tokens: Math.min(request.maxOutputTokens || 2048, 4096),
+        text: { format: { type: "json_schema", name: "plant_walk_analysis", strict: true, schema: analysisSchema() } },
+        store: false
+      }),
+      signal: controller.signal
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+  let payload = null;
+  try { payload = await providerResponse.json(); } catch {}
+  if (!providerResponse.ok) {
+    const error = new Error("OpenAI analysis request failed.");
+    error.providerStatus = providerResponse.status;
+    throw error;
+  }
+  const text = responseText(payload || {});
+  if (!text) throw new Error("OpenAI returned no analysis text.");
+  let output;
+  try { output = JSON.parse(text); } catch { throw new Error("OpenAI returned invalid analysis JSON."); }
+  return {
+    schemaVersion: "1.0",
+    walkId: walk.walkId,
+    provider: "openai",
+    model,
+    status: "completed",
+    summary: output.summary,
+    issues: output.issues
   };
 }
 
@@ -127,7 +209,9 @@ export default async function handler(request, response) {
   if (!walk) return fail(response, 400, "INVALID_REQUEST", "Request does not match the supported AI request schema.");
 
   try {
-    const analysis = createMockAnalysis(parsed.value, walk);
+    const analysis = process.env.OPENAI_API_KEY
+      ? await createOpenAiAnalysis(parsed.value, walk)
+      : createMockAnalysis(parsed.value, walk);
     const validated = globalThis.analysisContract.validateAnalysisResult(analysis, {
       walkId: walk.walkId,
       issueIds: walk.issues.map(issue => issue.issueId)
@@ -139,4 +223,4 @@ export default async function handler(request, response) {
   }
 }
 
-export const endpointInternals = Object.freeze({ MAX_REQUEST_BYTES, validateRequest, createMockAnalysis });
+export const endpointInternals = Object.freeze({ MAX_REQUEST_BYTES, validateRequest, createMockAnalysis, createOpenAiAnalysis, analysisSchema, responseText });

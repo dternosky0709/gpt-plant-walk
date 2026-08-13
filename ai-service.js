@@ -94,11 +94,36 @@
           issues: normalizedWalk.issues.map((issue) => ({
             issueId: issue.issueId,
             order: issue.order,
-            priority: issue.order === 1 ? "high" : "medium",
+            priority: "Planned",
             trade: "Field verification required",
             recommendation: "Field verification required"
           }))
         };
+      }
+    });
+  }
+
+  function createHttpAiProvider(options) {
+    const endpoint = options && options.endpoint;
+    const fetchImpl = options && options.fetchImpl || global.fetch;
+    if (typeof endpoint !== "string" || !endpoint.trim()) throw new TypeError("AI endpoint is required.");
+    if (typeof fetchImpl !== "function") throw new TypeError("Fetch is required for the hosted AI provider.");
+    return Object.freeze({
+      name: "openai-server",
+      async analyzeWalk(request) {
+        const response = await fetchImpl(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(request)
+        });
+        let payload = null;
+        try { payload = await response.json(); } catch {}
+        if (!response.ok) {
+          const error = new Error(payload && payload.error && payload.error.message || "AI analysis is temporarily unavailable.");
+          error.code = payload && payload.error && payload.error.code || `HTTP_${response.status}`;
+          throw error;
+        }
+        return payload;
       }
     });
   }
@@ -108,11 +133,14 @@
       throw new Error("AI configuration layer must be loaded before creating the configured AI service.");
     }
     const config = global.aiConfig.createAiConfig(configOverrides);
-    if (config.providerMode !== MOCK_PROVIDER_NAME) {
-      throw new Error("Only mock AI provider mode is available in this release.");
-    }
+    const provider = config.providerMode === MOCK_PROVIDER_NAME
+      ? createMockAiProvider(config)
+      : config.providerMode === "openai-server"
+        ? createHttpAiProvider({ endpoint: config.apiEndpoint })
+        : null;
+    if (!provider) throw new Error("Unsupported AI provider mode.");
     return createAiService({
-      provider: createMockAiProvider(config),
+      provider,
       promptOptions: { model: config.model, maxOutputTokens: config.maxOutputTokens },
       runtimeConfig: config
     });
@@ -121,6 +149,7 @@
   global.aiService = Object.freeze({
     createAiService,
     createMockAiProvider,
+    createHttpAiProvider,
     createConfiguredAiService
   });
 })(typeof globalThis !== "undefined" ? globalThis : window);

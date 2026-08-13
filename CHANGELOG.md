@@ -4,6 +4,23 @@ All notable changes to GPT Plant Walk will be documented here.
 
 This project follows milestone-based releases. Each release should include the sprint goal, files changed, key fixes, and remaining TODOs.
 
+## v1.2.1 - AI Walk History Analysis
+
+### Added
+- Automatic server-side AI analysis after each completed walk.
+- Review-required narrative summaries and per-issue priority, trade, and recommendation in Settings → Walk History.
+- On-demand AI summary generation for previously completed walks.
+- Structured OpenAI Responses API output with strict validation before local persistence.
+
+### Safety and reliability
+- Keeps the OpenAI API key exclusively in the server environment.
+- Preserves original field observations as the source record and requires “Field verification required” for unsupported details.
+- Leaves Maintenance Planner status, assignment, and work orders unchanged.
+- Keeps baseline maintenance packet generation available when AI is unavailable.
+
+### Deferred
+- Photo analysis and AI-authored maintenance packet sections remain disabled during the text-only pilot.
+
 ## v1.2.0 - Industrial Interface and Walk History
 
 ### Added

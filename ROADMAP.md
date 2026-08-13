@@ -1,14 +1,14 @@
 # GPT Plant Walk Roadmap
 
-## GPT Plant Walk 1.2.0
+## GPT Plant Walk 1.2.1
 
-Version 1.2.0 preserves the stable field workflow and Planner synchronization foundation while adding the approved dark industrial interface, persistent Home/Settings navigation, and Settings-based Walk History. Completed-walk history now shows the recorded items and supports confirmed local deletion without deleting accepted Planner work orders.
+Version 1.2.1 activates server-side, text-only AI analysis after a completed walk. Settings-based Walk History shows a review-required narrative summary plus per-issue priority, trade, and recommendation while retaining every original observation as the source record. Historical walks can request analysis on demand.
 
 Release hardening and field validation take priority over feature expansion.
 
 ## Phase 2 — Integrated AI engineering review
 
-Phase 2 may add server-side, structured engineering analysis after capture. Internal engineering prompts and standards remain governed inputs for that future work. AI failure must not prevent generation of the baseline maintenance packet.
+The first Phase 2 pilot is active for text observations. AI failure does not prevent generation of the baseline maintenance packet. Photo analysis, automatic Planner changes, and AI-authored maintenance packet sections remain deferred pending field validation.
 
 ## Later phases
 

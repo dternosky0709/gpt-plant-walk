@@ -12,8 +12,8 @@ const walk = { id: "walk-e2e", temporaryUiState: true, issues: [
   { id: "issue-b", observation: "Panel latch loose", storageKey: "secret" }
 ] };
 const valid = () => ({ schemaVersion: "1.0", walkId: walk.id, provider: "test", model: "test-v1", status: "completed", summary: "Complete", issues: [
-  { issueId: "issue-a", order: 1, priority: "high", trade: "Mechanical", recommendation: "Inspect seal" },
-  { issueId: "issue-b", order: 2, priority: "medium", trade: "Electrical", recommendation: "Inspect latch" }
+  { issueId: "issue-a", order: 1, priority: "Urgent", trade: "Mechanical", recommendation: "Inspect seal" },
+  { issueId: "issue-b", order: 2, priority: "Planned", trade: "Electrical", recommendation: "Inspect latch" }
 ] });
 
 {
