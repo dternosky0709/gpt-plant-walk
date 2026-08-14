@@ -1,4 +1,4 @@
-const APP_VERSION = "1.2.1";
+const APP_VERSION = "1.3.0";
 const STORAGE_KEY = "gptPlantWalks";
 const DRAFT_KEY = "gptPlantWalkDraft";
 const ACTIVE_WALK_KEY = "gptPlantWalkActiveWalkId";
@@ -22,6 +22,11 @@ const currentWalkTitle = $("currentWalkTitle");
 const currentWalkDetail = $("currentWalkDetail");
 const activeWalkSection = $("activeWalkSection");
 const previousWalksSection = $("previousWalksSection");
+const gallerySection = $("gallerySection");
+const galleryGrid = $("galleryGrid");
+const workOrderDetailSection = $("workOrderDetailSection");
+const workOrderDetail = $("workOrderDetail");
+const backToGalleryBtn = $("backToGalleryBtn");
 const reportSection = $("reportSection");
 const walkStartedText = $("walkStartedText");
 const issueCountBadge = $("issueCountBadge");
@@ -41,11 +46,17 @@ const plannerSyncTitle = $("plannerSyncTitle");
 const plannerSyncDetail = $("plannerSyncDetail");
 const retryPlannerSyncBtn = $("retryPlannerSyncBtn");
 const homeNavBtn = $("homeNavBtn");
+const galleryNavBtn = $("galleryNavBtn");
 const settingsNavBtn = $("settingsNavBtn");
 
 startWalkBtn.addEventListener("click", startWalk);
 resumeWalkBtn.addEventListener("click", resumeCurrentWalk);
 homeNavBtn.addEventListener("click", handleHomeNavigation);
+galleryNavBtn.addEventListener("click", () => openPhotoGallery());
+backToGalleryBtn.addEventListener("click", () => {
+  if (history.state && history.state.plantWalkView === "work-order") history.back();
+  else openPhotoGallery();
+});
 saveIssueBtn.addEventListener("click", saveIssue);
 finishWalkBtn.addEventListener("click", finishWalk);
 backToStartBtn.addEventListener("click", () => returnToStart());
@@ -61,8 +72,13 @@ registerServiceWorker();
 initializeApp();
 window.addEventListener("online", () => processPlannerQueue());
 window.addEventListener("popstate", event => {
+  if (event.state && event.state.plantWalkView === "gallery") return openPhotoGallery({ updateHistory: false });
+  if (event.state && event.state.plantWalkView === "work-order") {
+    return openGalleryWorkOrder(event.state.walkId, event.state.issueId, event.state.photoIndex, { updateHistory: false });
+  }
   if (event.state && event.state.plantWalkView === "report") return;
   if (!reportSection.classList.contains("hidden")) returnToStart({ updateHistory: false });
+  else handleHomeNavigation();
 });
 
 async function initializeApp() {
@@ -411,8 +427,112 @@ async function deleteIssue(issueId, issueNumber) {
   }
 }
 
+function hideGalleryViews() {
+  gallerySection.classList.add("hidden");
+  workOrderDetailSection.classList.add("hidden");
+}
+
+function openPhotoGallery({ updateHistory = true } = {}) {
+  const appSettingsSection = $("settingsSection");
+  const appDashboardSection = $("dashboardSection");
+  if (appSettingsSection) appSettingsSection.classList.add("hidden");
+  if (appDashboardSection) appDashboardSection.classList.remove("hidden");
+  homeSection.classList.add("hidden");
+  activeWalkSection.classList.add("hidden");
+  previousWalksSection.classList.add("hidden");
+  reportSection.classList.add("hidden");
+  workOrderDetailSection.classList.add("hidden");
+  gallerySection.classList.remove("hidden");
+  renderPhotoGallery();
+  setActiveNavigation("gallery");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  if (updateHistory && (!history.state || history.state.plantWalkView !== "gallery")) {
+    history.pushState({ plantWalkView: "gallery" }, "");
+  }
+}
+
+function renderPhotoGallery() {
+  galleryGrid.innerHTML = "";
+  const photos = window.photoGallery ? window.photoGallery.collectGalleryPhotos(walks) : [];
+  if (!photos.length) {
+    galleryGrid.innerHTML = '<p class="muted gallery-empty">No photos from completed walks yet.</p>';
+    return;
+  }
+  photos.forEach(item => {
+    const displayedWorkOrderId = window.plannerSync && typeof window.plannerSync.displayWorkOrderId === "function"
+      ? window.plannerSync.displayWorkOrderId(item.workOrderNumber)
+      : item.workOrderNumber;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "gallery-item";
+    button.setAttribute("aria-label", `Open work order ${displayedWorkOrderId || `for Issue ${item.issueOrder}`}`);
+    const image = document.createElement("img");
+    image.src = item.photo;
+    image.alt = `Issue ${item.issueOrder} photo`;
+    const label = document.createElement("span");
+    label.textContent = displayedWorkOrderId || `Issue ${item.issueOrder}`;
+    const date = document.createElement("small");
+    date.textContent = item.completedAt || "Date unavailable";
+    button.append(image, label, date);
+    button.addEventListener("click", () => openGalleryWorkOrder(item.walkId, item.issueId, item.photoIndex));
+    galleryGrid.appendChild(button);
+  });
+}
+
+function syncStatusLabel(issue) {
+  if (issue.syncStatus === "synced") return "Synced to Maintenance Planner";
+  if (issue.syncStatus === "sync_failed") return "Planner synchronization needs attention";
+  if (issue.syncStatus === "pending_sync") return "Pending Planner synchronization";
+  return "Not sent to Maintenance Planner";
+}
+
+function openGalleryWorkOrder(walkId, issueId, photoIndex = 0, { updateHistory = true } = {}) {
+  const walk = walks.find(item => item.id === walkId && item.status === "completed");
+  const issueIndex = walk ? walk.issues.findIndex(item => item.id === issueId) : -1;
+  const issue = issueIndex >= 0 ? walk.issues[issueIndex] : null;
+  if (!walk || !issue) return openPhotoGallery({ updateHistory });
+  const photos = Array.isArray(issue.photos) ? issue.photos : [];
+  const selectedPhotoIndex = Number.isInteger(photoIndex) && photos[photoIndex] ? photoIndex : 0;
+  const displayedWorkOrderId = window.plannerSync && typeof window.plannerSync.displayWorkOrderId === "function"
+    ? window.plannerSync.displayWorkOrderId(issue.workOrderId)
+    : issue.workOrderId;
+  const aiIssue = walk.analysis && walk.analysis.provider === "openai"
+    ? walk.analysis.issues.find(item => item.issueId === issue.id)
+    : null;
+  const priority = aiIssue ? aiIssue.priority : issue.initialPriority || "Planned";
+  const trade = aiIssue ? aiIssue.trade : "Field verification required";
+  const recommendation = aiIssue ? aiIssue.recommendation : "Field verification required";
+
+  workOrderDetail.innerHTML = `<p class="section-kicker amber">WORK ORDER</p><div class="detail-title-row"><h2>${escapeHtml(displayedWorkOrderId || `Issue ${issueIndex + 1}`)}</h2><span class="priority-pill">${escapeHtml(priority)}</span></div><div class="work-order-detail-meta"><p><strong>Walk completed</strong><span>${escapeHtml(walk.endedAt || walk.completedAt || "Field verification required")}</span></p><p><strong>Issue</strong><span>${issueIndex + 1} of ${walk.issues.length}</span></p><p><strong>Planner</strong><span>${escapeHtml(syncStatusLabel(issue))}</span></p><p><strong>Trade</strong><span>${escapeHtml(trade)}</span></p></div><div id="detailPhotoFrame" class="detail-photo-frame"></div><section class="detail-observation"><span>ORIGINAL OBSERVATION</span><p>${escapeHtml(issue.observation || "Photo-only issue")}</p></section><section class="detail-recommendation"><span>${aiIssue ? "AI-GENERATED · REVIEW REQUIRED" : "CORRECTIVE WORK"}</span><p>${escapeHtml(recommendation)}</p></section><section class="detail-closeout"><span>TECHNICIAN CLOSEOUT</span><p>Corrective action taken: ____________________________________</p><p>Parts used: _______________________________________________</p><p>Completion date / repair time: ______________________________</p></section>`;
+  const photoFrame = $("detailPhotoFrame");
+  if (photos.length) {
+    const image = document.createElement("img");
+    image.src = photos[selectedPhotoIndex];
+    image.alt = `${displayedWorkOrderId || `Issue ${issueIndex + 1}`} photo ${selectedPhotoIndex + 1}`;
+    photoFrame.appendChild(image);
+    const count = document.createElement("small");
+    count.textContent = `Photo ${selectedPhotoIndex + 1} of ${photos.length}`;
+    photoFrame.appendChild(count);
+  }
+
+  const appSettingsSection = $("settingsSection");
+  const appDashboardSection = $("dashboardSection");
+  if (appSettingsSection) appSettingsSection.classList.add("hidden");
+  if (appDashboardSection) appDashboardSection.classList.remove("hidden");
+  homeSection.classList.add("hidden");
+  activeWalkSection.classList.add("hidden");
+  previousWalksSection.classList.add("hidden");
+  reportSection.classList.add("hidden");
+  gallerySection.classList.add("hidden");
+  workOrderDetailSection.classList.remove("hidden");
+  setActiveNavigation("gallery");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  if (updateHistory) history.pushState({ plantWalkView: "work-order", walkId, issueId, photoIndex: selectedPhotoIndex }, "");
+}
+
 function renderPreviousWalks() {
   homeSection.classList.add("hidden");
+  hideGalleryViews();
   previousWalksSection.classList.remove("hidden");
   activeWalkSection.classList.add("hidden");
   reportSection.classList.add("hidden");
@@ -544,6 +664,7 @@ function generateReport(walkId) {
   homeSection.classList.add("hidden");
   reportSection.classList.remove("hidden");
   previousWalksSection.classList.add("hidden");
+  hideGalleryViews();
   if (!history.state || history.state.plantWalkView !== "report" || history.state.walkId !== walk.id) {
     history.pushState({ plantWalkView: "report", walkId: walk.id }, "");
   }
@@ -775,6 +896,7 @@ async function returnToStart({ updateHistory = true } = {}) {
         activeWalkSection.classList.add("hidden");
         previousWalksSection.classList.add("hidden");
         reportSection.classList.add("hidden");
+        hideGalleryViews();
         window.scrollTo({ top: 0, behavior: "smooth" });
         window.dispatchEvent(new CustomEvent("plantwalk:return-to-start"));
         updateHomeStatus();
@@ -805,6 +927,7 @@ function handleHomeNavigation() {
   activeWalkSection.classList.add("hidden");
   previousWalksSection.classList.add("hidden");
   reportSection.classList.add("hidden");
+  hideGalleryViews();
   updateHomeStatus();
   setActiveNavigation("home");
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -812,10 +935,16 @@ function handleHomeNavigation() {
 
 function setActiveNavigation(view) {
   homeNavBtn.classList.toggle("is-active", view === "home");
+  galleryNavBtn.classList.toggle("is-active", view === "gallery");
   settingsNavBtn.classList.toggle("is-active", view === "settings");
 }
 
+function restoreNavigationForVisibleView() {
+  setActiveNavigation(!gallerySection.classList.contains("hidden") || !workOrderDetailSection.classList.contains("hidden") ? "gallery" : "home");
+}
+
 window.setPlantWalkNavigation = setActiveNavigation;
+window.restorePlantWalkNavigation = restoreNavigationForVisibleView;
 
 function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return;

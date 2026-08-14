@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GPT Plant Walk 1.2.1</title>
+  <title>GPT Plant Walk 1.3.0</title>
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="styles.css?v=1.2.1" />
-  <link rel="stylesheet" href="settings.css?v=1.2.1" />
+  <link rel="stylesheet" href="styles.css?v=1.3.0" />
+  <link rel="stylesheet" href="settings.css?v=1.3.0" />
   <meta name="theme-color" content="#0b0d0c" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Plant Walk" />
@@ -86,6 +86,18 @@
         <h2>Walk History</h2>
         <p class="muted">Review completed walks and their saved maintenance observations.</p>
         <div id="walkList"></div>
+      </section>
+
+      <section id="gallerySection" class="card hidden no-print gallery-page">
+        <p class="section-kicker amber">PAST WALK PHOTOS</p>
+        <h2>Photo Gallery</h2>
+        <p class="muted">Tap a photo to open its work order.</p>
+        <div id="galleryGrid" class="gallery-grid"></div>
+      </section>
+
+      <section id="workOrderDetailSection" class="card hidden no-print work-order-detail-page">
+        <button id="backToGalleryBtn" type="button" class="secondary compact-button">← BACK TO GALLERY</button>
+        <div id="workOrderDetail"></div>
       </section>
 
       <section id="reportSection" class="card hidden">
@@ -195,7 +207,7 @@
 
         <div class="settings-group">
           <h3>About</h3>
-          <div class="about-row"><span>App Version</span><strong>1.2.1</strong></div>
+          <div class="about-row"><span>App Version</span><strong>1.3.0</strong></div>
           <div class="about-row"><span>Maintenance Packet</span><strong>v2.0</strong></div>
           <div class="about-row"><span>Storage</span><strong>Local / IndexedDB</strong></div>
         </div>
@@ -208,13 +220,14 @@
 
   <nav class="bottom-nav no-print" aria-label="Primary navigation">
     <button id="homeNavBtn" class="nav-button is-active" type="button" aria-label="Go to Home"><span aria-hidden="true">⌂</span>Home</button>
+    <button id="galleryNavBtn" class="nav-button" type="button" aria-label="Open Photo Gallery"><span aria-hidden="true">▦</span>Gallery</button>
     <button id="settingsNavBtn" class="nav-button" type="button" aria-label="Open Settings"><span aria-hidden="true">⚙</span>Settings</button>
   </nav>
 
-  <footer class="no-print"><p id="appVersionText">GPT Plant Walk 1.2.1</p></footer>
+  <footer class="no-print"><p id="appVersionText">GPT Plant Walk 1.3.0</p></footer>
 
-  <script src="storage.js?v=1.2.1"></script>
-  <script src="planner-sync.js?v=1.2.1"></script>
+  <script src="storage.js?v=1.3.0"></script>
+  <script src="planner-sync.js?v=1.3.0"></script>
   <script src="ai-config.js?v=1.0"></script>
   <script src="walk-contract.js?v=1.0"></script>
   <script src="prompt-builder.js?v=1.2.1"></script>
@@ -222,8 +235,9 @@
   <script src="ai-service.js?v=1.2.1"></script>
   <script src="issue-deletion.js?v=1.0"></script>
   <script src="walk-reset.js?v=1.0"></script>
-  <script src="app.js?v=1.2.1"></script>
-  <script src="settings.js?v=1.2.1"></script>
+  <script src="photo-gallery.js?v=1.3.0"></script>
+  <script src="app.js?v=1.3.0"></script>
+  <script src="settings.js?v=1.3.0"></script>
   <script src="pdfbolt.js?v=1.0"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-# GPT Plant Walk 1.2.1
+# GPT Plant Walk 1.3.0
 
 A mobile-first Progressive Web App for capturing plant-walk observations and photos and generating professional maintenance packets.
 
@@ -24,6 +24,7 @@ A mobile-first Progressive Web App for capturing plant-walk observations and pho
 - Automatic server-side AI analysis after a completed walk, with a review-required summary and per-issue priority, trade, and recommendation in Walk History
 - On-demand AI summary generation for walks completed before this release
 - Persistent Home and Settings navigation
+- Bottom-navigation Photo Gallery for completed-walk photos, with direct issue work-order details when a photo is tapped
 - Dark industrial interface aligned with Maintenance Planner
 - Server-side PDFBolt Maintenance Packet generation
 - Back-to-Start reset that preserves completed history

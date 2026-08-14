@@ -126,7 +126,8 @@ function closeSettings() {
   settingsSection.classList.add("hidden");
   dashboardSection.classList.remove("hidden");
   applyTheme(appSettings.theme || "dark");
-  if (typeof window.setPlantWalkNavigation === "function") window.setPlantWalkNavigation("home");
+  if (typeof window.restorePlantWalkNavigation === "function") window.restorePlantWalkNavigation();
+  else if (typeof window.setPlantWalkNavigation === "function") window.setPlantWalkNavigation("home");
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 

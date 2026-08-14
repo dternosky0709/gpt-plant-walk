@@ -33,7 +33,7 @@ Photo-backed data belongs in IndexedDB, not `localStorage`. Save operations must
 
 ### AI is additive, not blocking
 
-The AI pipeline uses versioned contracts and strict validation. AI failure must not prevent baseline maintenance-packet generation. The current server endpoint produces validated mock results rather than calling a production provider.
+The AI pipeline uses versioned contracts and strict validation. AI failure must not prevent baseline maintenance-packet generation. The server endpoint calls OpenAI only when the protected production key is configured and retains a validated mock fallback when it is absent.
 
 ### Maintenance Planner remains separate
 
@@ -54,6 +54,8 @@ Maintenance Planner is an add-on companion, not a Plant Walk replacement and not
 - PDFBolt v2.0: executive cover and one-page-per-issue packet generation
 - Phase 2 Sprint 2.1: immutable AI config, versioned walk contract, prompt builder, response schema, mock pipeline
 - Phase 2 Sprint 2.2: strict Vercel `POST /api/analyze-walk` endpoint foundation with mock results
+- v1.2.1: protected server-side text AI analysis and review-required Walk History summaries
+- v1.3.0: bottom-navigation local Photo Gallery with direct work-order detail review
 
 ## Known documentation drift
 

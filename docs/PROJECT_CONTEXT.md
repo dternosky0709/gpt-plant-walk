@@ -12,7 +12,7 @@ The intended field loop is:
 4. Save independent issues in their original order.
 5. Finish the walk.
 6. Generate a professional Maintenance Packet v2.0 PDF.
-7. Reopen completed walks from Previous Walks or return to a clean start screen.
+7. Reopen completed walks from Settings → Walk History, or review completed-walk photos from the bottom-navigation Gallery.
 
 ## Product owner and operating environment
 
@@ -36,7 +36,7 @@ The intended field loop is:
 
 ## Current status
 
-The source identifies the app as GPT Plant Walk 1.1.2 and includes cross-device work-order identity protection, clean operator-facing work-order numbers, and the Maintenance Planner synchronization foundation on top of the Phase 2 endpoint base. Production hosted AI is not active; baseline packet generation remains available without it.
+The source identifies the app as GPT Plant Walk 1.3.0. It includes cross-device work-order identity protection, Maintenance Planner synchronization, server-side text AI analysis, Settings-based Walk History, and a local completed-walk Photo Gallery that opens the related work-order details without generating a PDF. Baseline packet generation remains available if AI is unavailable.
 
 Earlier product records described a release-candidate validation gate with critical iPhone/PWA checks still needing completion. Codex should verify the current release-validation evidence rather than assume production approval.
 

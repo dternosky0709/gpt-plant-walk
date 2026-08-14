@@ -4,6 +4,18 @@ All notable changes to GPT Plant Walk will be documented here.
 
 This project follows milestone-based releases. Each release should include the sprint goal, files changed, key fixes, and remaining TODOs.
 
+## v1.3.0 - Photo Gallery and Direct Work-order Review
+
+### Added
+- Persistent Gallery icon in the bottom navigation.
+- Newest-first gallery of photos from completed walks stored on the current device.
+- Direct work-order detail view when a gallery photo is tapped, including the original observation, selected photo, clean work-order number, AI assessment when available, Planner sync status, and technician closeout fields.
+
+### Preserved
+- Gallery browsing does not generate a PDF or require a network request.
+- Original observations and locally stored photos remain unchanged.
+- Maintenance Planner remains a separate application and source of downstream workflow status.
+
 ## v1.2.1 - AI Walk History Analysis
 
 ### Added

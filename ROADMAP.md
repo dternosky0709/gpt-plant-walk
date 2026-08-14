@@ -1,8 +1,8 @@
 # GPT Plant Walk Roadmap
 
-## GPT Plant Walk 1.2.1
+## GPT Plant Walk 1.3.0
 
-Version 1.2.1 activates server-side, text-only AI analysis after a completed walk. Settings-based Walk History shows a review-required narrative summary plus per-issue priority, trade, and recommendation while retaining every original observation as the source record. Historical walks can request analysis on demand.
+Version 1.3.0 adds a bottom-navigation Photo Gallery for locally stored completed-walk photos. Tapping a photo opens its related work order immediately, without requiring maintenance-packet generation.
 
 Release hardening and field validation take priority over feature expansion.
 
