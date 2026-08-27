@@ -1,7 +1,7 @@
 import { renderMaintenancePacketHtml } from "./maintenance-packet-template.js";
 
 const PDFBOLT_DIRECT_URL = "https://api.pdfbolt.com/v1/direct";
-const MAX_REQUEST_BYTES = 8 * 1024 * 1024;
+const MAX_REQUEST_BYTES = 3.5 * 1024 * 1024;
 
 function setCorsHeaders(response) {
   response.setHeader("Access-Control-Allow-Origin", process.env.ALLOWED_ORIGIN || "*");

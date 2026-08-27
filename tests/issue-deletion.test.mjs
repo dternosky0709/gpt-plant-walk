@@ -64,7 +64,7 @@ for (const [label, issueId, expected] of [
   };
   packetContext.window = packetContext;
   vm.runInNewContext(packetSource, packetContext);
-  const packet = packetContext.buildPlantWalkPacket({ ...reopenedWalk, startedAt: "2026-07-14T09:00:00" });
+  const packet = await packetContext.buildPlantWalkPacket({ ...reopenedWalk, startedAt: "2026-07-14T09:00:00" });
   assert.equal(packet.report.totalIssues, 2, "packet issue count must reflect deletion");
   assert.deepEqual(Array.from(packet.issues, issue => issue.sequence), [1, 2], "packet issues must be renumbered");
   assert.deepEqual(Array.from(packet.issues, issue => issue.originalObservation), ["Observation 1", "Observation 3"], "packet order must exclude only the deleted issue");

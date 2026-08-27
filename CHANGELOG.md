@@ -4,6 +4,17 @@ All notable changes to GPT Plant Walk will be documented here.
 
 This project follows milestone-based releases. Each release should include the sprint goal, files changed, key fixes, and remaining TODOs.
 
+## v1.3.1 - Maintenance Packet Photo Payload Repair
+
+### Fixed
+- Creates print-optimized photo copies only while generating the Maintenance Packet, preventing multi-work-order photo packets from being rejected before PDFBolt conversion.
+- Preserves every original IndexedDB photo unchanged.
+- Checks request size before transmission and displays the specific server or PDFBolt error instead of replacing it with a generic message.
+
+### Preserved
+- One issue still produces exactly one work-order page in original order.
+- Original observations, work-order IDs, Planner synchronization, and saved walk data remain unchanged.
+
 ## v1.3.0 - Photo Gallery and Direct Work-order Review
 
 ### Added

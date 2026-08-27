@@ -1,4 +1,4 @@
-# GPT Plant Walk 1.3.0
+# GPT Plant Walk 1.3.1
 
 A mobile-first Progressive Web App for capturing plant-walk observations and photos and generating professional maintenance packets.
 
