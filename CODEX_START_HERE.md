@@ -7,7 +7,7 @@ This repository is the source code for **GPT Plant Walk 1.0**. The package adds 
 - Repository: `dternosky0709/gpt-plant-walk`
 - Default branch: `main`
 - Packaged commit: `12bd03fd04e723383f0b9d0ff28146ce603979e0`
-- App version in source: `1.3.0`
+- App version in source: `1.3.2`
 - Maintenance packet schema: `PlantWalkPacketV2`
 - Walk/AI contract schema: `1.0`
 - Current hosted-AI endpoint behavior: strict server-side OpenAI Responses API call when `OPENAI_API_KEY` is configured, with a deterministic mock fallback when it is absent
@@ -27,7 +27,7 @@ Use `CODEX_FIRST_TASK.md`. It asks Codex to audit the repository against the pac
 
 Maintenance Planner is intentionally not included as source code in this repository. It is independently deployed at:
 
-`https://maintenance-planner.dternosky0709.chatgpt.site`
+`https://maintenance-planner-one.vercel.app`
 
 Its relationship to Plant Walk is defined in `docs/MAINTENANCE_PLANNER_INTEGRATION.md`.
 

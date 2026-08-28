@@ -4,6 +4,16 @@ All notable changes to GPT Plant Walk will be documented here.
 
 This project follows milestone-based releases. Each release should include the sprint goal, files changed, key fixes, and remaining TODOs.
 
+## v1.3.2 - Vercel Planner Cutover
+
+### Changed
+- Routes authenticated work-order intake to the protected Vercel Maintenance Planner.
+- Preserves stable queued event and work-order IDs so previously unsent walks can be retried without duplicate creation.
+- Refreshes the installed PWA cache while preserving IndexedDB walks, photos, and pending synchronization records.
+
+### Operator action
+- Reopen Plant Walk once while online, open the affected completed walk, and tap **Retry Sync**.
+
 ## v1.3.1 - Maintenance Packet Photo Payload Repair
 
 ### Fixed

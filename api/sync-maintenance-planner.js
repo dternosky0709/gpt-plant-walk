@@ -1,5 +1,5 @@
 const MAX_REQUEST_BYTES = 256 * 1024;
-const DEFAULT_PLANNER_URL = "https://maintenance-planner.dternosky0709.chatgpt.site";
+const DEFAULT_PLANNER_URL = "https://maintenance-planner-one.vercel.app";
 
 function sendJson(response, status, payload) {
   response.setHeader("Cache-Control", "no-store");

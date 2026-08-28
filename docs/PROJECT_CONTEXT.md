@@ -36,7 +36,7 @@ The intended field loop is:
 
 ## Current status
 
-The source identifies the app as GPT Plant Walk 1.3.0. It includes cross-device work-order identity protection, Maintenance Planner synchronization, server-side text AI analysis, Settings-based Walk History, and a local completed-walk Photo Gallery that opens the related work-order details without generating a PDF. Baseline packet generation remains available if AI is unavailable.
+The source identifies the app as GPT Plant Walk 1.3.2. It includes cross-device work-order identity protection, Maintenance Planner synchronization with the protected Vercel Planner, server-side text AI analysis, Settings-based Walk History, and a local completed-walk Photo Gallery that opens the related work-order details without generating a PDF. Baseline packet generation remains available if AI is unavailable.
 
 Earlier product records described a release-candidate validation gate with critical iPhone/PWA checks still needing completion. Codex should verify the current release-validation evidence rather than assume production approval.
 
